@@ -1,8 +1,3 @@
-pub enum Version {
-	Gif87a,
-	Gif89a
-}
-
 pub struct Color {
 	pub r: u8,
 	pub g: u8,
@@ -11,10 +6,6 @@ pub struct Color {
 
 impl Color {
 	pub fn new(r: u8, g: u8, b: u8) -> Self {
-		Self {
-			r,
-			g,
-			b
-		}
+		Self { r, g, b }
 	}
 }
