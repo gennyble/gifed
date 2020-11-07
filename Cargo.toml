@@ -7,4 +7,12 @@ license = "CC0-1.0"
 description = "Gif encoding and decoding with fine control"
 repository = "https://github.com/genuinebyte/gifed"
 
+[dev-dependencies]
+criterion = "0.3"
+rand = "0.7.3"
+
 [dependencies]
+
+[[bench]]
+name = "lzw_encode"
+harness = false

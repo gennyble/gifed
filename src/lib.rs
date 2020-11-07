@@ -1,5 +1,6 @@
-mod common;
-mod writer;
+mod components;
+mod lzw;
+pub mod writer;
 
-pub use common::Version;
-pub use writer::GifBuilder;
+pub use components::*;
+pub use lzw::LZW;

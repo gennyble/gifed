@@ -12,7 +12,9 @@ always will be, one of the main goals of this crate.
 - [ ] Automatically select the lowest version possible when writing
 - [ ] Read GIF87a
 - [ ] Read GIF89a
-- [ ] Feature to allow using [weezl][weezl-crates] for LZW compression instead of the built-in
-- [ ] Well written and easy to understand docs! (Can never truly be finished, but "good enough")
+- [ ] Feature to allow using the [weezl][weezl-crates] crate for LZW compression instead of the built-in
+- [ ] Feature to allow using the [rgb][rgb-crates] crate for the color type.
+- [ ] Well written and easy to understand docs! `bitvec` quality, but who can match that?
 
 [weezl-crates]: https://crates.io/crates/weezl
+[rgb-crates]: https://crates.io/crates/rgb
