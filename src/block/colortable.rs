@@ -1,5 +1,5 @@
 use std::ops::Deref;
-pub use super::Color;
+pub use crate::Color;
 
 pub struct ColorTable {
 	table: Vec<Color>

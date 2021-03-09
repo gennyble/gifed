@@ -1,4 +1,4 @@
-use crate::components::{ColorTable, Image, ImageDescriptor};
+use crate::block::{ColorTable, Image, ImageDescriptor};
 
 pub struct ImageBuilder {
 	left_offset: u16,

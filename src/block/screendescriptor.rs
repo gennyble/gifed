@@ -1,4 +1,4 @@
-pub struct LogicalScreenDescriptor {
+pub struct ScreenDescriptor {
 	pub width: u16,
 	pub height: u16,
 	pub packed: u8,
@@ -6,7 +6,7 @@ pub struct LogicalScreenDescriptor {
 	pub pixel_aspect_ratio: u8
 }
 
-impl LogicalScreenDescriptor {
+impl ScreenDescriptor {
 	pub fn color_table_present(&mut self, is_present: bool) {
 		if is_present {
 			self.packed |= 0b1000_0000;
@@ -26,8 +26,8 @@ impl LogicalScreenDescriptor {
 	//TODO: Setter for color resolution in packed field
 }
 
-impl From<&LogicalScreenDescriptor> for Box<[u8]> {
-	fn from(lsd: &LogicalScreenDescriptor) -> Self {
+impl From<&ScreenDescriptor> for Box<[u8]> {
+	fn from(lsd: &ScreenDescriptor) -> Self {
 		let mut vec = vec![];
 		vec.extend_from_slice(&lsd.width.to_le_bytes());
 		vec.extend_from_slice(&lsd.height.to_le_bytes());

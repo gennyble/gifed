@@ -1,5 +1,6 @@
-use crate::components::{ColorTable, Gif, LogicalScreenDescriptor, Version};
-use super::ImageBuilder;
+use crate::block::{ColorTable, ScreenDescriptor, Version};
+use crate::writer::ImageBuilder;
+use crate::Gif;
 
 pub struct GifBuilder {
 	version: Version,
@@ -44,7 +45,7 @@ impl GifBuilder {
 	}
 
 	pub fn build(self) -> Gif {
-		let mut lsd = LogicalScreenDescriptor {
+		let mut lsd = ScreenDescriptor {
 			width: self.width,
 			height: self.height,
 			packed: 0, // Set later
@@ -64,7 +65,7 @@ impl GifBuilder {
 
 		Gif {
 			header: self.version,
-			logical_screen_descriptor: lsd,
+			screen_descriptor: lsd,
 			global_color_table: self.global_color_table,
 			images
 		}
