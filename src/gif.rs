@@ -1,8 +1,8 @@
-use super::{ColorTable, Image, LogicalScreenDescriptor, Version};
+use crate::block::{ColorTable, Image, ScreenDescriptor, Version};
 
 pub struct Gif {
 	pub header: Version,
-	pub logical_screen_descriptor: LogicalScreenDescriptor,
+	pub screen_descriptor: ScreenDescriptor,
 	pub global_color_table: Option<ColorTable>,
 	pub images: Vec<Image>
 	// Trailer at the end of this struct is 0x3B //
@@ -14,7 +14,7 @@ impl Gif {
 
 		out.extend_from_slice((&self.header).into());
 		
-		let mut boxed: Box<[u8]> = (&self.logical_screen_descriptor).into();
+		let mut boxed: Box<[u8]> = (&self.screen_descriptor).into();
 		out.extend_from_slice(&*boxed);
 
 		// While we output the color table, grab it's length to use when
