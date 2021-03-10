@@ -1,4 +1,4 @@
-use crate::block::{ColorTable, Image, ImageDescriptor};
+use crate::block::{ColorTable, IndexedImage, ImageDescriptor};
 
 pub struct ImageBuilder {
 	left_offset: u16,
@@ -48,7 +48,7 @@ impl ImageBuilder {
 		self
 	}
 
-	pub fn build(self) -> Image {
+	pub fn build(self) -> IndexedImage {
 		let mut imgdesc = ImageDescriptor {
 			left: self.left_offset,
 			top: self.top_offset,
@@ -62,7 +62,7 @@ impl ImageBuilder {
 			imgdesc.color_table_size(lct.packed_len());
 		}
 
-		Image {
+		IndexedImage {
 			image_descriptor: imgdesc,
 			local_color_table: self.color_table,
 			indicies: self.indicies

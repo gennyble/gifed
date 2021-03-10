@@ -1,4 +1,4 @@
-use crate::block::{ColorTable, ScreenDescriptor, Version};
+use crate::block::{Block, ColorTable, ScreenDescriptor, Version};
 use crate::writer::ImageBuilder;
 use crate::Gif;
 
@@ -6,9 +6,9 @@ pub struct GifBuilder {
 	version: Version,
 	width: u16,
 	height: u16,
-	global_color_table: Option<ColorTable>,
 	background_color_index: u8,
-	imagebuilders: Vec<ImageBuilder>
+	global_color_table: Option<ColorTable>,
+	blocks: Vec<Block>
 }
 
 impl GifBuilder {
@@ -17,9 +17,9 @@ impl GifBuilder {
 			version,
 			width,
 			height,
-			global_color_table: None,
 			background_color_index: 0,
-			imagebuilders: vec![]
+			global_color_table: None,
+			blocks: vec![]
 		}
 	}
 
@@ -40,7 +40,7 @@ impl GifBuilder {
 	}
 
 	pub fn image(mut self, ib: ImageBuilder) -> Self {
-		self.imagebuilders.push(ib);
+		self.blocks.push(Block::IndexedImage(ib.build()));
 		self
 	}
 
@@ -58,16 +58,11 @@ impl GifBuilder {
 			lsd.color_table_size(gct.len() as u8);
 		}
 
-		let mut images = vec![];
-		for builder in self.imagebuilders.into_iter() {
-			images.push(builder.build());
-		}
-
 		Gif {
 			header: self.version,
 			screen_descriptor: lsd,
 			global_color_table: self.global_color_table,
-			images
+			blocks: self.blocks
 		}
 	}
 }

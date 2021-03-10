@@ -1,20 +1,18 @@
 use crate::LZW;
 use super::{ColorTable, ImageDescriptor};
 
-pub struct Image {
+pub struct IndexedImage {
 	pub image_descriptor: ImageDescriptor,
 	pub local_color_table: Option<ColorTable>,
 	pub indicies: Vec<u8>
 }
 
-impl Image {
+impl IndexedImage {
 	pub fn as_boxed_slice(&self, minimum_code_size: u8) -> Box<[u8]> {
 		let mut out = vec![];
 
 		let mut boxed: Box<[u8]> = (&self.image_descriptor).into();
 		out.extend_from_slice(&*boxed);
-
-		// Table based image data //
 
 		// Get the mcs while we write out the color table
 		let mut mcs = if let Some(lct) = &self.local_color_table {
