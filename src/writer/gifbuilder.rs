@@ -1,4 +1,4 @@
-use crate::block::{Block, ColorTable, ScreenDescriptor, Version};
+use crate::block::{Block, ColorTable, ScreenDescriptor, Version, extension::Extension};
 use crate::writer::ImageBuilder;
 use crate::Gif;
 
@@ -41,6 +41,11 @@ impl GifBuilder {
 
 	pub fn image(mut self, ib: ImageBuilder) -> Self {
 		self.blocks.push(Block::IndexedImage(ib.build()));
+		self
+	}
+
+	pub fn extension(mut self, ext: Extension) -> Self {
+		self.blocks.push(Block::Extension(ext));
 		self
 	}
 
