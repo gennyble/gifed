@@ -1,9 +1,5 @@
-use crate::block::Version;
-
-use super::ScreenDescriptor;
-
+use super::IndexedImage;
 
 pub enum Block {
-	Version(Version),
-	LogicalScreenDescriptor(ScreenDescriptor)
+	IndexedImage(IndexedImage)
 }

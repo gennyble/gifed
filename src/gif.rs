@@ -1,10 +1,9 @@
-use crate::block::{ColorTable, Image, ScreenDescriptor, Version};
-
+use crate::block::{Block, ColorTable, ScreenDescriptor, Version};
 pub struct Gif {
 	pub header: Version,
 	pub screen_descriptor: ScreenDescriptor,
 	pub global_color_table: Option<ColorTable>,
-	pub images: Vec<Image>
+	pub blocks: Vec<Block>
 	// Trailer at the end of this struct is 0x3B //
 }
 
@@ -28,9 +27,13 @@ impl Gif {
 			0
 		};
 
-		for image in self.images.iter() {
-			boxed = image.as_boxed_slice(mcs);
-			out.extend_from_slice(&*boxed);
+		for block in self.blocks.iter() {
+			match block {
+				Block::IndexedImage(image) => {
+					boxed = image.as_boxed_slice(mcs);
+					out.extend_from_slice(&*boxed);
+				}
+			}
 		}
 
 		// Write Trailer
