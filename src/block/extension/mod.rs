@@ -5,6 +5,9 @@ pub use graphiccontrol::{DisposalMethod, GraphicControl};
 pub enum Extension {
 	GraphicControl(GraphicControl),
 	Looping(u16)
+	// Comment
+	// Plain Text
+	// Generic Application
 }
 
 impl From<&Extension> for Box<[u8]> {
