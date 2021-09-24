@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -18,5 +18,21 @@ impl From<[u8; 3]> for Color {
             g: arr[1],
             b: arr[2],
         }
+    }
+}
+
+impl From<(u8, u8, u8)> for Color {
+    fn from(t: (u8, u8, u8)) -> Self {
+        Self {
+            r: t.0,
+            g: t.1,
+            b: t.2,
+        }
+    }
+}
+
+impl Into<[u8; 3]> for Color {
+    fn into(self) -> [u8; 3] {
+        [self.r, self.g, self.b]
     }
 }

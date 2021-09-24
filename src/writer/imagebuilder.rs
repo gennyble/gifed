@@ -1,4 +1,10 @@
-use crate::block::{ColorTable, ImageDescriptor, IndexedImage};
+use crate::{
+    block::{
+        extension::{DisposalMethod, GraphicControl},
+        ColorTable, ImageDescriptor, IndexedImage, Version,
+    },
+    EncodingError,
+};
 
 pub struct ImageBuilder {
     left_offset: u16,
@@ -6,6 +12,11 @@ pub struct ImageBuilder {
     width: u16,
     height: u16,
     color_table: Option<ColorTable>,
+
+    delay: u16,
+    disposal_method: DisposalMethod,
+    transparent_index: Option<u8>,
+
     indicies: Vec<u8>,
 }
 
@@ -17,38 +28,89 @@ impl ImageBuilder {
             width,
             height,
             color_table: None,
+            delay: 0,
+            disposal_method: DisposalMethod::NoAction,
+            transparent_index: None,
             indicies: vec![],
         }
     }
 
-    pub fn offsets(mut self, left_offset: u16, top_offset: u16) -> Self {
-        self.left_offset = left_offset;
-        self.top_offset = top_offset;
+    pub fn offset(mut self, left: u16, top: u16) -> Self {
+        self.left_offset = left;
+        self.top_offset = top;
         self
     }
 
-    pub fn left_offset(mut self, offset: u16) -> Self {
-        self.left_offset = offset;
-        self
-    }
-
-    pub fn top_offset(mut self, offset: u16) -> Self {
-        self.top_offset = offset;
-        self
-    }
-
-    pub fn color_table(mut self, table: ColorTable) -> Self {
+    pub fn palette(mut self, table: ColorTable) -> Self {
         self.color_table = Some(table);
-
         self
     }
 
-    pub fn indicies(mut self, vec: Vec<u8>) -> Self {
-        self.indicies = vec;
+    /// Time to wait, in hundreths of a second, before this image is drawn
+    pub fn delay(mut self, hundreths: u16) -> Self {
+        self.delay = hundreths;
         self
     }
 
-    pub fn build(self) -> IndexedImage {
+    pub fn disposal_method(mut self, method: DisposalMethod) -> Self {
+        self.disposal_method = method;
+        self
+    }
+
+    pub fn transparent_index(mut self, index: Option<u8>) -> Self {
+        self.transparent_index = index;
+        self
+    }
+
+    pub fn required_version(&self) -> Version {
+        if self.delay > 0
+            || self.disposal_method != DisposalMethod::NoAction
+            || self.transparent_index.is_some()
+        {
+            Version::Gif89a
+        } else {
+            Version::Gif87a
+        }
+    }
+
+    pub fn get_graphic_control(&self) -> Option<GraphicControl> {
+        if self.required_version() == Version::Gif89a {
+            if let Some(transindex) = self.transparent_index {
+                Some(GraphicControl::new(
+                    self.disposal_method,
+                    false,
+                    true,
+                    self.delay,
+                    transindex,
+                ))
+            } else {
+                Some(GraphicControl::new(
+                    self.disposal_method,
+                    false,
+                    false,
+                    self.delay,
+                    0,
+                ))
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn indicies(mut self, indicies: Vec<u8>) -> Self {
+        self.indicies = indicies;
+        self
+    }
+
+    pub fn build(self) -> Result<IndexedImage, EncodingError> {
+        let expected_len = self.width as usize * self.height as usize;
+        if self.indicies.len() != expected_len {
+            return Err(EncodingError::IndicieSizeMismatch {
+                expected: expected_len,
+                got: self.indicies.len(),
+            });
+        }
+
         let mut imgdesc = ImageDescriptor {
             left: self.left_offset,
             top: self.top_offset,
@@ -62,10 +124,10 @@ impl ImageBuilder {
             imgdesc.set_color_table_size(lct.packed_len());
         }
 
-        IndexedImage {
+        Ok(IndexedImage {
             image_descriptor: imgdesc,
             local_color_table: self.color_table,
             indicies: self.indicies,
-        }
+        })
     }
 }
