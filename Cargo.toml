@@ -12,9 +12,7 @@ criterion = "0.3"
 rand = "0.7.3"
 
 [dependencies]
-png = "0.17.1"
 weezl = "0.1.5"
-owo-colors = "2.0.0"
 
 [[bench]]
 name = "lzw_encode"
