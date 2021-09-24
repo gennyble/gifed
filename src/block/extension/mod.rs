@@ -2,7 +2,6 @@ mod application;
 mod graphiccontrol;
 
 pub use graphiccontrol::{DisposalMethod, GraphicControl};
-use owo_colors::colors::xterm::GrandisCaramel;
 
 pub use self::application::Application;
 
