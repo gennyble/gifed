@@ -148,10 +148,10 @@ pub mod gif {
             .image(
                 ImageBuilder::new(4, 4)
                     .palette(colortable.try_into().unwrap())
-                    .indicies(indicies.clone()),
+                    .indicies(&indicies),
             )
             .unwrap()
-            .image(ImageBuilder::new(4, 4).indicies(indicies))
+            .image(ImageBuilder::new(4, 4).indicies(&indicies))
             .unwrap();
 
         let bytes = actual.build().to_vec();
@@ -175,12 +175,12 @@ pub mod gif {
             .image(
                 ImageBuilder::new(4, 4)
                     .palette(colortable.try_into().unwrap())
-                    .indicies(indicies.clone())
+                    .indicies(&indicies)
                     .disposal_method(DisposalMethod::RestoreBackground)
                     .delay(64),
             )
             .unwrap()
-            .image(ImageBuilder::new(4, 4).indicies(indicies))
+            .image(ImageBuilder::new(4, 4).indicies(&indicies))
             .unwrap()
             .build()
             .to_vec();

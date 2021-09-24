@@ -97,8 +97,8 @@ impl ImageBuilder {
         }
     }
 
-    pub fn indicies(mut self, indicies: Vec<u8>) -> Self {
-        self.indicies = indicies;
+    pub fn indicies(mut self, indicies: &[u8]) -> Self {
+        self.indicies = indicies.to_vec();
         self
     }
 
