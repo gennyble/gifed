@@ -1,9 +1,11 @@
 pub use crate::Color;
+use crate::EncodingError;
 use std::{
     convert::{TryFrom, TryInto},
     ops::Deref,
 };
 
+#[derive(Clone, Debug)]
 pub struct ColorTable {
     table: Vec<Color>,
 }
@@ -29,6 +31,19 @@ impl ColorTable {
     pub fn push(&mut self, color: Color) {
         self.table.push(color);
     }
+
+    pub fn get(&self, index: u8) -> Option<Color> {
+        self.table.get(index as usize).map(|v| v.clone())
+    }
+
+    pub fn from_color(&self, color: Color) -> Option<u8> {
+        for (i, &c) in self.table.iter().enumerate() {
+            if c == color {
+                return Some(i as u8);
+            }
+        }
+        None
+    }
 }
 
 impl Deref for ColorTable {
@@ -36,12 +51,6 @@ impl Deref for ColorTable {
 
     fn deref(&self) -> &Self::Target {
         &self.table
-    }
-}
-
-impl From<Vec<Color>> for ColorTable {
-    fn from(table: Vec<Color>) -> Self {
-        ColorTable { table }
     }
 }
 
@@ -76,6 +85,32 @@ impl TryFrom<&[u8]> for ColorTable {
                     .chunks(3)
                     .map(|slice| Color::from(TryInto::<[u8; 3]>::try_into(slice).unwrap()))
                     .collect::<Vec<Color>>(),
+            })
+        }
+    }
+}
+
+impl TryFrom<Vec<Color>> for ColorTable {
+    type Error = EncodingError;
+
+    fn try_from(value: Vec<Color>) -> Result<Self, Self::Error> {
+        if value.len() > 256 {
+            Err(EncodingError::TooManyColors)
+        } else {
+            Ok(Self { table: value })
+        }
+    }
+}
+
+impl TryFrom<Vec<(u8, u8, u8)>> for ColorTable {
+    type Error = EncodingError;
+
+    fn try_from(value: Vec<(u8, u8, u8)>) -> Result<Self, Self::Error> {
+        if value.len() > 256 {
+            Err(EncodingError::TooManyColors)
+        } else {
+            Ok(Self {
+                table: value.into_iter().map(|c| c.into()).collect(),
             })
         }
     }

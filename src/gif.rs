@@ -1,4 +1,4 @@
-use crate::block::{extension::Extension, Block, ColorTable, ScreenDescriptor, Version};
+use crate::{block::{extension::Extension, Block, ColorTable, ScreenDescriptor, Version}, writer::GifBuilder};
 pub struct Gif {
     pub header: Version,
     pub screen_descriptor: ScreenDescriptor,
@@ -7,6 +7,10 @@ pub struct Gif {
 }
 
 impl Gif {
+    pub fn builder(width: u16, height: u16) -> GifBuilder {
+        GifBuilder::new(width, height)
+    }
+
     pub fn to_vec(&self) -> Vec<u8> {
         let mut out = vec![];
 
@@ -32,7 +36,7 @@ impl Gif {
                     boxed = image.as_boxed_slice(mcs);
                     out.extend_from_slice(&*boxed);
                 }
-                Block::BlockedImage(_) => unreachable!(),
+                //Block::BlockedImage(_) => unreachable!(),
                 Block::Extension(ext) => {
                     boxed = ext.into();
                     out.extend_from_slice(&*boxed);
@@ -47,10 +51,24 @@ impl Gif {
     }
 }
 
+/*struct FrameIterator {
+
+}
+
+impl Iterator for FrameIterator {
+    type Item = ();
+
+    fn next(&mut self) -> Option<Self::Item> {
+        todo!()
+    }
+}*/
+
 #[cfg(test)]
 pub mod gif {
-    use super::*;
-    use crate::block::extension::{DisposalMethod, GraphicControl};
+    use std::convert::TryInto;
+    use std::io::Write;
+
+    use crate::block::extension::DisposalMethod;
     use crate::writer::{GifBuilder, ImageBuilder};
     use crate::Color;
 
@@ -125,18 +143,19 @@ pub mod gif {
             0x3B, // Trailer
         ];
 
-        let actual_out = GifBuilder::new(Version::Gif87a, 4, 4)
-            .global_color_table(gct.into())
+        let actual = GifBuilder::new(4, 4)
+            .palette(gct.try_into().unwrap())
             .image(
                 ImageBuilder::new(4, 4)
-                    .color_table(colortable.into())
+                    .palette(colortable.try_into().unwrap())
                     .indicies(indicies.clone()),
             )
+            .unwrap()
             .image(ImageBuilder::new(4, 4).indicies(indicies))
-            .build()
-            .to_vec();
+            .unwrap();
 
-        assert_eq!(actual_out, expected_out);
+        let bytes = actual.build().to_vec();
+        assert_eq!(bytes, expected_out);
     }
 
     #[test]
@@ -146,95 +165,34 @@ pub mod gif {
         let indicies = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0];
 
         let expected_out = vec![
-            0x47,
-            0x49,
-            0x46,
-            0x38,
-            0x37,
-            0x61, // Version - GIF87a
-            0x04,
-            0x00,
-            0x04,
-            0x00,
-            0b1000_0000,
-            0x00,
-            0x00, // Logical Screen Descriptor
-            1,
-            2,
-            3,
-            253,
-            254,
-            255, // Global Color Table
-            0x2C,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x04,
-            0x00,
-            0x04,
-            0x00,
-            0b1000_0000, // Image Descriptor 1
-            0,
-            0,
-            0,
-            128,
-            0,
-            255, // Color Table
-            0x02,
-            0x05,
-            0x84,
-            0x1D,
-            0x81,
-            0x7A,
-            0x50,
-            0x00, // Image Data 1
-            0x21,
-            0xF9,
-            0x04,
-            0b000_010_0_0,
-            0x40,
-            0x00,
-            0x00,
-            0x00, // Graphic Control Extension
-            0x2C,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x04,
-            0x00,
-            0x04,
-            0x00,
-            0b0000_0000, // Image Descriptor 2
-            0x02,
-            0x05,
-            0x84,
-            0x1D,
-            0x81,
-            0x7A,
-            0x50,
-            0x00, // Image Data 2
-            0x3B, // Trailer
+            71, 73, 70, 56, 57, 97, 4, 0, 4, 0, 128, 0, 0, 1, 2, 3, 253, 254, 255, 33, 249, 4, 8,
+            64, 0, 0, 0, 44, 0, 0, 0, 0, 4, 0, 4, 0, 128, 0, 0, 0, 128, 0, 255, 2, 5, 132, 29, 129,
+            122, 80, 0, 44, 0, 0, 0, 0, 4, 0, 4, 0, 0, 2, 5, 132, 29, 129, 122, 80, 0, 59,
         ];
 
-        let actual_out = GifBuilder::new(Version::Gif87a, 4, 4)
-            .global_color_table(gct.into())
+        let actual_out = GifBuilder::new(4, 4)
+            .palette(gct.try_into().unwrap())
             .image(
                 ImageBuilder::new(4, 4)
-                    .color_table(colortable.into())
-                    .indicies(indicies.clone()),
+                    .palette(colortable.try_into().unwrap())
+                    .indicies(indicies.clone())
+                    .disposal_method(DisposalMethod::RestoreBackground)
+                    .delay(64),
             )
-            .extension(Extension::GraphicControl(GraphicControl::new(
-                DisposalMethod::RestoreBackground,
-                false,
-                false,
-                64,
-                0,
-            )))
+            .unwrap()
             .image(ImageBuilder::new(4, 4).indicies(indicies))
+            .unwrap()
             .build()
             .to_vec();
+
+        std::fs::File::create("ah.gif")
+            .unwrap()
+            .write_all(&actual_out)
+            .unwrap();
+        std::fs::File::create("ah_hand.gif")
+            .unwrap()
+            .write_all(&expected_out)
+            .unwrap();
 
         assert_eq!(actual_out, expected_out);
     }

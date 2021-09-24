@@ -2,6 +2,7 @@ mod application;
 mod graphiccontrol;
 
 pub use graphiccontrol::{DisposalMethod, GraphicControl};
+use owo_colors::colors::xterm::GrandisCaramel;
 
 pub use self::application::Application;
 
@@ -39,5 +40,11 @@ impl From<&Extension> for Box<[u8]> {
 
         vec.push(0x00); // Zero-length data block indicates end of extension
         vec.into_boxed_slice()
+    }
+}
+
+impl From<GraphicControl> for Extension {
+    fn from(gce: GraphicControl) -> Self {
+        Extension::GraphicControl(gce)
     }
 }

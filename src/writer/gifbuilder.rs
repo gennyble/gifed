@@ -1,6 +1,8 @@
+use std::convert::TryInto;
+
 use crate::block::{extension::Extension, Block, ColorTable, ScreenDescriptor, Version};
 use crate::writer::ImageBuilder;
-use crate::Gif;
+use crate::{EncodingError, Gif};
 
 pub struct GifBuilder {
     version: Version,
@@ -12,9 +14,9 @@ pub struct GifBuilder {
 }
 
 impl GifBuilder {
-    pub fn new(version: Version, width: u16, height: u16) -> Self {
+    pub fn new(width: u16, height: u16) -> Self {
         Self {
-            version,
+            version: Version::Gif87a,
             width,
             height,
             background_color_index: 0,
@@ -23,30 +25,40 @@ impl GifBuilder {
         }
     }
 
-    pub fn global_color_table(mut self, table: ColorTable) -> Self {
-        self.global_color_table = Some(table);
-
+    pub fn palette(mut self, palette: ColorTable) -> Self {
+        self.global_color_table = Some(palette);
         self
     }
 
-    pub fn background_color_index(mut self, ind: u8) -> Self {
+    pub fn background_index(mut self, ind: u8) -> Result<Self, EncodingError> {
         if self.global_color_table.is_none() {
-            //TODO: Throw error or let it go by, who knows
-            panic!("Setting background color index with noGCT!");
+            Err(EncodingError::NoColorTable)
+        } else {
+            self.background_color_index = ind;
+            Ok(self)
+        }
+    }
+
+    pub fn image(mut self, ib: ImageBuilder) -> Result<Self, EncodingError> {
+        if ib.required_version() == Version::Gif89a {
+            self.version = Version::Gif89a;
         }
 
-        self.background_color_index = ind;
-        self
+        if let Some(gce) = ib.get_graphic_control() {
+            self.blocks.push(Block::Extension(gce.into()));
+        }
+
+        self.blocks.push(Block::IndexedImage(ib.build()?));
+        Ok(self)
     }
 
-    pub fn image(mut self, ib: ImageBuilder) -> Self {
-        self.blocks.push(Block::IndexedImage(ib.build()));
-        self
-    }
-
-    pub fn extension(mut self, ext: Extension) -> Self {
+    /*pub fn extension(mut self, ext: Extension) -> Self {
         self.blocks.push(Block::Extension(ext));
         self
+    }*/
+
+    pub fn repeat(&mut self, count: u16) {
+        self.blocks.push(Block::Extension(Extension::Looping(count)))
     }
 
     pub fn build(self) -> Gif {

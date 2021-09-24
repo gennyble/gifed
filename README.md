@@ -8,8 +8,8 @@ always will be, one of the main goals of this crate.
 
 ### TODO
 - [x] Writing GIF87a
-- [ ] Writing GIF89a
-- [ ] Automatically select the lowest version possible when writing
+- [x] Writing GIF89a
+- [x] Automatically select the lowest version possible when writing
 - [ ] Read GIF87a
 - [ ] Read GIF89a
 - [ ] Feature to allow using the [weezl][weezl-crates] crate for LZW compression instead of the built-in

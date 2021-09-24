@@ -9,6 +9,16 @@ pub struct ScreenDescriptor {
 }
 
 impl ScreenDescriptor {
+    pub fn new(width: u16, height: u16) -> Self {
+        Self {
+            width,
+            height,
+            packed: 0,
+            background_color_index: 0,
+            pixel_aspect_ratio: 0,
+        }
+    }
+
     pub fn set_color_table_present(&mut self, is_present: bool) {
         if is_present {
             self.packed |= 0b1000_0000;

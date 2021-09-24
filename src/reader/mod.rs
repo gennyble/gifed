@@ -9,9 +9,10 @@ use std::{
 use crate::{
     block::{
         extension::{Application, Extension, GraphicControl},
-        Block, BlockedImage, ColorTable, ImageDescriptor, ScreenDescriptor, Version,
+        Block, ColorTable, CompressedImage, ImageDescriptor, IndexedImage, ScreenDescriptor,
+        Version,
     },
-    Gif,
+    color, Gif,
 };
 
 pub struct GifReader {}
@@ -100,8 +101,8 @@ impl GifReader {
         }
     }
 
-    fn read_extension(mut reader: &mut SmartReader) -> Block {
-        let mut extension_id = reader.u8().expect("File ended early");
+    fn read_extension(reader: &mut SmartReader) -> Block {
+        let extension_id = reader.u8().expect("File ended early");
 
         match extension_id {
             0xF9 => {
@@ -149,13 +150,17 @@ impl GifReader {
 
         let lzw_csize = reader.u8().expect("Failed to read LZW Minimum Code Size");
 
-        let blocks = reader.take_data_subblocks();
+        let compressed_data = reader.take_and_collapse_subblocks();
+        println!("c{}", compressed_data.len());
 
-        Block::BlockedImage(BlockedImage {
+        let mut decompress = weezl::decode::Decoder::new(weezl::BitOrder::Lsb, lzw_csize);
+        //TODO: remove unwrap
+        let mut decompressed_data = decompress.decode(&compressed_data).unwrap();
+
+        Block::IndexedImage(IndexedImage {
             image_descriptor: descriptor,
             local_color_table: color_table,
-            lzw_minimum_code_size: lzw_csize,
-            blocks,
+            indicies: decompressed_data,
         })
     }
 }

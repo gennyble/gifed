@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Version {
     Gif87a,
     Gif89a,

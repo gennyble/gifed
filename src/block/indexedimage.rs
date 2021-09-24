@@ -10,6 +10,22 @@ pub struct IndexedImage {
 }
 
 impl IndexedImage {
+    pub fn left(&self) -> u16 {
+        self.image_descriptor.left
+    }
+
+    pub fn top(&self) -> u16 {
+        self.image_descriptor.left
+    }
+
+    pub fn width(&self) -> u16 {
+        self.image_descriptor.width
+    }
+
+    pub fn height(&self) -> u16 {
+        self.image_descriptor.height
+    }
+
     pub fn as_boxed_slice(&self, minimum_code_size: u8) -> Box<[u8]> {
         let mut out = vec![];
 
@@ -46,7 +62,7 @@ impl IndexedImage {
     }
 }
 
-pub struct BlockedImage {
+pub struct CompressedImage {
     pub image_descriptor: ImageDescriptor,
     pub local_color_table: Option<ColorTable>,
     pub lzw_minimum_code_size: u8,
