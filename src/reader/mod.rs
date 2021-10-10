@@ -1,6 +1,8 @@
 use std::{
     borrow::Cow,
     convert::{TryFrom, TryInto},
+    error::Error,
+    fmt,
     fs::File,
     io::{BufRead, BufReader, Read},
     path::Path,
@@ -18,24 +20,23 @@ use crate::{
 pub struct GifReader {}
 
 impl GifReader {
-    pub fn file<P: AsRef<Path>>(path: P) -> Gif {
-        let mut file = File::open(path).expect("Failed to open file");
+    pub fn file<P: AsRef<Path>>(path: P) -> Result<Gif, DecodingError> {
+        let mut file = File::open(path)?;
         let mut reader = SmartReader {
             inner: vec![],
             position: 0,
         };
-        file.read_to_end(&mut reader.inner)
-            .expect("Failed to read gif");
+        file.read_to_end(&mut reader.inner)?;
 
-        let mut gif = Self::read_required(&mut reader);
+        let mut gif = Self::read_required(&mut reader)?;
 
         if gif.screen_descriptor.color_table_present() {
             let gct_size = gif.screen_descriptor.color_table_len() * 3;
-            gif.global_color_table = Some(Self::read_color_table(&mut reader, gct_size));
+            gif.global_color_table = Some(Self::read_color_table(&mut reader, gct_size)?);
         }
 
         loop {
-            match Self::read_block(&mut reader) {
+            match Self::read_block(&mut reader)? {
                 Some(block) => {
                     /*match &block {
                         Block::IndexedImage(_) => println!("Indexed Image"),
@@ -52,56 +53,61 @@ impl GifReader {
 
                     gif.blocks.push(block)
                 }
-                None => return gif,
+                None => return Ok(gif),
             }
         }
     }
 
-    fn read_required(reader: &mut SmartReader) -> Gif {
+    fn read_required(reader: &mut SmartReader) -> Result<Gif, DecodingError> {
         let version = match reader.take_lossy_utf8(6).as_deref() {
             Some("GIF87a") => Version::Gif87a,
             Some("GIF89a") => Version::Gif89a,
-            _ => panic!("Version string is unknown"),
+            _ => return Err(DecodingError::UnknownVersionString),
         };
 
         let mut lsd_buffer: [u8; 7] = [0; 7];
         reader
             .read_exact(&mut lsd_buffer)
-            .expect("Failed to read Logical Screen Descriptor from gif");
+            .ok_or(DecodingError::UnexpectedEof)?;
 
         let lsd = ScreenDescriptor::from(lsd_buffer);
 
-        Gif {
+        Ok(Gif {
             header: version,
             screen_descriptor: lsd,
             global_color_table: None,
             blocks: vec![],
-        }
+        })
     }
 
-    fn read_color_table(reader: &mut SmartReader, size: usize) -> ColorTable {
+    fn read_color_table(
+        reader: &mut SmartReader,
+        size: usize,
+    ) -> Result<ColorTable, DecodingError> {
         let buffer = reader
             .take(size as usize)
-            .expect("Failed to read Color Table");
+            .ok_or(DecodingError::UnexpectedEof)?;
 
-        ColorTable::try_from(&buffer[..]).expect("Failed to parse Color Table")
+        // We get the size from the screen descriptor. This should never return Err
+        Ok(ColorTable::try_from(&buffer[..]).unwrap())
     }
 
-    fn read_block(reader: &mut SmartReader) -> Option<Block> {
-        let block_id = reader.u8().expect("File ended early");
+    fn read_block(reader: &mut SmartReader) -> Result<Option<Block>, DecodingError> {
+        let block_id = reader.u8().ok_or(DecodingError::UnexpectedEof)?;
 
+        //TODO: remove panic
         match block_id {
-            0x21 => Some(Self::read_extension(reader)),
-            0x2C => Some(Self::read_image(reader)),
-            0x3B => None,
-            _ => None, /*panic!(
-                           "Unknown block identifier {:X} {:X}",
-                           block_id, reader.position
-                       ),*/
+            0x21 => Self::read_extension(reader).map(|block| Some(block)),
+            0x2C => Self::read_image(reader).map(|block| Some(block)),
+            0x3B => Ok(None),
+            _ => panic!(
+                "Unknown block identifier {:X} {:X}",
+                block_id, reader.position
+            ),
         }
     }
 
-    fn read_extension(reader: &mut SmartReader) -> Block {
+    fn read_extension(reader: &mut SmartReader) -> Result<Block, DecodingError> {
         let extension_id = reader.u8().expect("File ended early");
 
         match extension_id {
@@ -110,45 +116,50 @@ impl GifReader {
                 let mut data = [0u8; 4];
                 reader
                     .read_exact(&mut data)
-                    .expect("Data ended early in graphics control extension sublock");
+                    .ok_or(DecodingError::UnexpectedEof)?;
                 reader.skip(1); // Skip block terminator
 
-                Block::Extension(Extension::GraphicControl(GraphicControl::from(data)))
+                Ok(Block::Extension(Extension::GraphicControl(
+                    GraphicControl::from(data),
+                )))
             }
-            0xFE => Block::Extension(Extension::Comment(reader.take_and_collapse_subblocks())),
-            0x01 => todo!(), // plain text extension
+            0xFE => Ok(Block::Extension(Extension::Comment(
+                reader.take_and_collapse_subblocks(),
+            ))),
+            0x01 => todo!(), //TODO: do; plain text extension
             0xFF => {
+                //TODO: error instead of unwraps
                 assert_eq!(Some(11), reader.u8());
                 let identifier = reader.take_lossy_utf8(8).unwrap().to_string();
                 let authentication_code: [u8; 3] =
                     TryInto::try_into(reader.take(3).unwrap()).unwrap();
                 let data = reader.take_and_collapse_subblocks();
 
-                Block::Extension(Extension::Application(Application {
+                Ok(Block::Extension(Extension::Application(Application {
                     identifier,
                     authentication_code,
                     data,
-                }))
+                })))
             }
             _ => panic!("Unknown Extension Identifier!"),
         }
     }
 
-    fn read_image(mut reader: &mut SmartReader) -> Block {
+    fn read_image(mut reader: &mut SmartReader) -> Result<Block, DecodingError> {
         let mut buffer = [0u8; 9];
         reader
             .read_exact(&mut buffer)
-            .expect("Failed to read Image Descriptor");
+            .ok_or(DecodingError::UnexpectedEof)?;
         let descriptor = ImageDescriptor::from(buffer);
 
         let color_table = if descriptor.color_table_present() {
             let size = descriptor.color_table_size() * 3;
-            Some(Self::read_color_table(&mut reader, size))
+            Some(Self::read_color_table(&mut reader, size)?)
         } else {
             None
         };
 
-        let lzw_csize = reader.u8().expect("Failed to read LZW Minimum Code Size");
+        let lzw_csize = reader.u8().ok_or(DecodingError::UnexpectedEof)?;
 
         let compressed_data = reader.take_and_collapse_subblocks();
         println!("c{}", compressed_data.len());
@@ -157,11 +168,39 @@ impl GifReader {
         //TODO: remove unwrap
         let mut decompressed_data = decompress.decode(&compressed_data).unwrap();
 
-        Block::IndexedImage(IndexedImage {
+        Ok(Block::IndexedImage(IndexedImage {
             image_descriptor: descriptor,
             local_color_table: color_table,
             indicies: decompressed_data,
-        })
+        }))
+    }
+}
+
+#[derive(Debug)]
+pub enum DecodingError {
+    IoError(std::io::Error),
+    UnknownVersionString,
+    UnexpectedEof,
+}
+
+impl Error for DecodingError {}
+impl fmt::Display for DecodingError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DecodingError::IoError(error) => write!(f, "{}", error),
+            DecodingError::UnknownVersionString => {
+                write!(f, "File did not start with a valid header")
+            }
+            DecodingError::UnexpectedEof => {
+                write!(f, "Found the end of the data at a weird spot")
+            }
+        }
+    }
+}
+
+impl From<std::io::Error> for DecodingError {
+    fn from(ioerror: std::io::Error) -> Self {
+        DecodingError::IoError(ioerror)
     }
 }
 
