@@ -1,8 +1,7 @@
 # gifed
 Gifed is a **GIF** **e**ncoding and **d**ecoding library.
 
-At current, half of that statement is a lie and this crate is incredibly rough. This library can
-only *write* gifs. The project is in its infancy but I hope to make it feature complete and
+This crate is still pretty rough. I hope to make it feature complete and
 intuitive to use while still allowing fine grained control over the file itself, which has been and 
 always will be, one of the main goals of this crate.
 
