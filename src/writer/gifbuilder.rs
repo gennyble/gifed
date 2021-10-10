@@ -11,6 +11,7 @@ pub struct GifBuilder {
     background_color_index: u8,
     global_color_table: Option<ColorTable>,
     blocks: Vec<Block>,
+    error: Option<EncodingError>,
 }
 
 impl GifBuilder {
@@ -22,6 +23,7 @@ impl GifBuilder {
             background_color_index: 0,
             global_color_table: None,
             blocks: vec![],
+            error: None,
         }
     }
 
@@ -30,16 +32,24 @@ impl GifBuilder {
         self
     }
 
-    pub fn background_index(mut self, ind: u8) -> Result<Self, EncodingError> {
+    pub fn background_index(mut self, ind: u8) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+
         if self.global_color_table.is_none() {
-            Err(EncodingError::NoColorTable)
+            self.error = Some(EncodingError::NoColorTable);
         } else {
             self.background_color_index = ind;
-            Ok(self)
         }
+        self
     }
 
-    pub fn image(mut self, ib: ImageBuilder) -> Result<Self, EncodingError> {
+    pub fn image(mut self, ib: ImageBuilder) -> Self {
+        if self.error.is_some() {
+            return self;
+        }
+
         if ib.required_version() == Version::Gif89a {
             self.version = Version::Gif89a;
         }
@@ -48,8 +58,12 @@ impl GifBuilder {
             self.blocks.push(Block::Extension(gce.into()));
         }
 
-        self.blocks.push(Block::IndexedImage(ib.build()?));
-        Ok(self)
+        match ib.build() {
+            Ok(image) => self.blocks.push(Block::IndexedImage(image)),
+            Err(e) => self.error = Some(e),
+        }
+
+        self
     }
 
     /*pub fn extension(mut self, ext: Extension) -> Self {
@@ -57,11 +71,17 @@ impl GifBuilder {
         self
     }*/
 
-    pub fn repeat(&mut self, count: u16) {
-        self.blocks.push(Block::Extension(Extension::Looping(count)))
+    pub fn repeat(mut self, count: u16) -> Self {
+        self.blocks
+            .push(Block::Extension(Extension::Looping(count)));
+        self
     }
 
-    pub fn build(self) -> Gif {
+    pub fn build(self) -> Result<Gif, EncodingError> {
+        if let Some(error) = self.error {
+            return Err(error);
+        }
+
         let mut lsd = ScreenDescriptor {
             width: self.width,
             height: self.height,
@@ -76,11 +96,11 @@ impl GifBuilder {
             lsd.set_color_table_size((gct.len() - 1) as u8);
         }
 
-        Gif {
+        Ok(Gif {
             header: self.version,
             screen_descriptor: lsd,
             global_color_table: self.global_color_table,
             blocks: self.blocks,
-        }
+        })
     }
 }
