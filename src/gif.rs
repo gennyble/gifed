@@ -1,4 +1,9 @@
-use crate::{block::{extension::Extension, Block, ColorTable, ScreenDescriptor, Version}, writer::GifBuilder};
+use std::{fs::File, io::Write, path::Path};
+
+use crate::{
+    block::{extension::Extension, Block, ColorTable, ScreenDescriptor, Version},
+    writer::GifBuilder,
+};
 pub struct Gif {
     pub header: Version,
     pub screen_descriptor: ScreenDescriptor,
@@ -48,6 +53,10 @@ impl Gif {
         out.push(0x3B);
 
         out
+    }
+
+    pub fn save<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
+        File::create(path.as_ref())?.write_all(&self.to_vec())
     }
 }
 
@@ -150,11 +159,9 @@ pub mod gif {
                     .palette(colortable.try_into().unwrap())
                     .indicies(&indicies),
             )
-            .unwrap()
-            .image(ImageBuilder::new(4, 4).indicies(&indicies))
-            .unwrap();
+            .image(ImageBuilder::new(4, 4).indicies(&indicies));
 
-        let bytes = actual.build().to_vec();
+        let bytes = actual.build().unwrap().to_vec();
         assert_eq!(bytes, expected_out);
     }
 
@@ -179,10 +186,9 @@ pub mod gif {
                     .disposal_method(DisposalMethod::RestoreBackground)
                     .delay(64),
             )
-            .unwrap()
             .image(ImageBuilder::new(4, 4).indicies(&indicies))
-            .unwrap()
             .build()
+            .unwrap()
             .to_vec();
 
         std::fs::File::create("ah.gif")
