@@ -181,6 +181,7 @@ pub enum DecodingError {
     IoError(std::io::Error),
     UnknownVersionString,
     UnexpectedEof,
+    ColorIndexOutOfBounds,
 }
 
 impl Error for DecodingError {}
@@ -193,6 +194,12 @@ impl fmt::Display for DecodingError {
             }
             DecodingError::UnexpectedEof => {
                 write!(f, "Found the end of the data at a weird spot")
+            }
+            DecodingError::ColorIndexOutOfBounds => {
+                write!(
+                    f,
+                    "The image contained an index not found in the color table"
+                )
             }
         }
     }

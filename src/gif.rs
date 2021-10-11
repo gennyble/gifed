@@ -2,7 +2,9 @@ use std::{fs::File, io::Write, path::Path};
 
 use crate::{
     block::{extension::Extension, Block, ColorTable, ScreenDescriptor, Version},
+    colorimage,
     writer::GifBuilder,
+    ColorImage,
 };
 pub struct Gif {
     pub header: Version,
@@ -58,19 +60,43 @@ impl Gif {
     pub fn save<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
         File::create(path.as_ref())?.write_all(&self.to_vec())
     }
+
+    pub fn images<'a>(&'a self) -> ImageIterator<'a> {
+        ImageIterator { inner: self }
+    }
 }
 
-/*struct FrameIterator {
-
+pub struct ImageIterator<'a> {
+    inner: &'a Gif,
 }
 
-impl Iterator for FrameIterator {
-    type Item = ();
+impl<'a> Iterator for ImageIterator<'a> {
+    type Item = Image<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         todo!()
     }
-}*/
+}
+
+pub struct Image<'a> {
+    pub(crate) width: u16,
+    pub(crate) height: u16,
+    left_offset: u16,
+    top_offset: u16,
+    pub(crate) palette: &'a ColorTable,
+    pub(crate) transparent_index: Option<u8>,
+    pub(crate) indicies: &'a [u8],
+}
+
+impl<'a> Image<'a> {
+    pub fn dimesnions(&self) -> (u16, u16) {
+        (self.width, self.height)
+    }
+
+    pub fn position(&self) -> (u16, u16) {
+        (self.left_offset, self.top_offset)
+    }
+}
 
 #[cfg(test)]
 pub mod gif {
