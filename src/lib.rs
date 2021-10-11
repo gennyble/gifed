@@ -1,4 +1,5 @@
 mod color;
+mod colorimage;
 mod gif;
 mod lzw;
 
@@ -10,6 +11,7 @@ use core::fmt;
 use std::error::Error;
 
 pub use color::Color;
+pub use colorimage::ColorImage;
 pub use gif::Gif;
 pub use lzw::LZW;
 
