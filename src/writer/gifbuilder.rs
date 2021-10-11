@@ -5,102 +5,102 @@ use crate::writer::ImageBuilder;
 use crate::{EncodingError, Gif};
 
 pub struct GifBuilder {
-    version: Version,
-    width: u16,
-    height: u16,
-    background_color_index: u8,
-    global_color_table: Option<ColorTable>,
-    blocks: Vec<Block>,
-    error: Option<EncodingError>,
+	version: Version,
+	width: u16,
+	height: u16,
+	background_color_index: u8,
+	global_color_table: Option<ColorTable>,
+	blocks: Vec<Block>,
+	error: Option<EncodingError>,
 }
 
 impl GifBuilder {
-    pub fn new(width: u16, height: u16) -> Self {
-        Self {
-            version: Version::Gif87a,
-            width,
-            height,
-            background_color_index: 0,
-            global_color_table: None,
-            blocks: vec![],
-            error: None,
-        }
-    }
+	pub fn new(width: u16, height: u16) -> Self {
+		Self {
+			version: Version::Gif87a,
+			width,
+			height,
+			background_color_index: 0,
+			global_color_table: None,
+			blocks: vec![],
+			error: None,
+		}
+	}
 
-    pub fn palette(mut self, palette: ColorTable) -> Self {
-        self.global_color_table = Some(palette);
-        self
-    }
+	pub fn palette(mut self, palette: ColorTable) -> Self {
+		self.global_color_table = Some(palette);
+		self
+	}
 
-    pub fn background_index(mut self, ind: u8) -> Self {
-        if self.error.is_some() {
-            return self;
-        }
+	pub fn background_index(mut self, ind: u8) -> Self {
+		if self.error.is_some() {
+			return self;
+		}
 
-        if self.global_color_table.is_none() {
-            self.error = Some(EncodingError::NoColorTable);
-        } else {
-            self.background_color_index = ind;
-        }
-        self
-    }
+		if self.global_color_table.is_none() {
+			self.error = Some(EncodingError::NoColorTable);
+		} else {
+			self.background_color_index = ind;
+		}
+		self
+	}
 
-    pub fn image(mut self, ib: ImageBuilder) -> Self {
-        if self.error.is_some() {
-            return self;
-        }
+	pub fn image(mut self, ib: ImageBuilder) -> Self {
+		if self.error.is_some() {
+			return self;
+		}
 
-        if ib.required_version() == Version::Gif89a {
-            self.version = Version::Gif89a;
-        }
+		if ib.required_version() == Version::Gif89a {
+			self.version = Version::Gif89a;
+		}
 
-        if let Some(gce) = ib.get_graphic_control() {
-            self.blocks.push(Block::Extension(gce.into()));
-        }
+		if let Some(gce) = ib.get_graphic_control() {
+			self.blocks.push(Block::Extension(gce.into()));
+		}
 
-        match ib.build() {
-            Ok(image) => self.blocks.push(Block::IndexedImage(image)),
-            Err(e) => self.error = Some(e),
-        }
+		match ib.build() {
+			Ok(image) => self.blocks.push(Block::IndexedImage(image)),
+			Err(e) => self.error = Some(e),
+		}
 
-        self
-    }
+		self
+	}
 
-    /*pub fn extension(mut self, ext: Extension) -> Self {
-        self.blocks.push(Block::Extension(ext));
-        self
-    }*/
+	/*pub fn extension(mut self, ext: Extension) -> Self {
+		self.blocks.push(Block::Extension(ext));
+		self
+	}*/
 
-    pub fn repeat(mut self, count: u16) -> Self {
-        self.blocks
-            .push(Block::Extension(Extension::Looping(count)));
-        self
-    }
+	pub fn repeat(mut self, count: u16) -> Self {
+		self.blocks
+			.push(Block::Extension(Extension::Looping(count)));
+		self
+	}
 
-    pub fn build(self) -> Result<Gif, EncodingError> {
-        if let Some(error) = self.error {
-            return Err(error);
-        }
+	pub fn build(self) -> Result<Gif, EncodingError> {
+		if let Some(error) = self.error {
+			return Err(error);
+		}
 
-        let mut lsd = ScreenDescriptor {
-            width: self.width,
-            height: self.height,
-            packed: 0, // Set later
-            background_color_index: self.background_color_index,
-            pixel_aspect_ratio: 0, //TODO: Allow configuring
-        };
+		let mut lsd = ScreenDescriptor {
+			width: self.width,
+			height: self.height,
+			packed: 0, // Set later
+			background_color_index: self.background_color_index,
+			pixel_aspect_ratio: 0, //TODO: Allow configuring
+		};
 
-        if let Some(gct) = &self.global_color_table {
-            println!("build {}", gct.len());
-            lsd.set_color_table_present(true);
-            lsd.set_color_table_size((gct.len() - 1) as u8);
-        }
+		if let Some(gct) = &self.global_color_table {
+			println!("build {}", gct.len());
+			lsd.set_color_table_present(true);
+			lsd.set_color_table_size((gct.len() - 1) as u8);
+		}
 
-        Ok(Gif {
-            header: self.version,
-            screen_descriptor: lsd,
-            global_color_table: self.global_color_table,
-            blocks: self.blocks,
-        })
-    }
+		Ok(Gif {
+			header: self.version,
+			screen_descriptor: lsd,
+			global_color_table: self.global_color_table,
+			blocks: self.blocks,
+		})
+	}
 }
