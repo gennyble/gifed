@@ -15,11 +15,11 @@ pub use version::Version;
 use crate::writer::ImageBuilder;
 
 pub enum Block {
-    IndexedImage(IndexedImage),
-    Extension(extension::Extension),
+	IndexedImage(IndexedImage),
+	Extension(extension::Extension),
 }
 
 enum WriteBlock {
-    ImageBuilder(ImageBuilder),
-    Block(Block),
+	ImageBuilder(ImageBuilder),
+	Block(Block),
 }
