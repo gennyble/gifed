@@ -75,7 +75,9 @@ impl GraphicControl {
 		&mut self.delay_time
 	}
 
-	//TODO: Transparency index setter
+	pub fn is_transparent(&self) -> bool {
+		self.packed & 0b000_000_0_1 > 0
+	}
 }
 
 impl From<[u8; 4]> for GraphicControl {

@@ -62,19 +62,62 @@ impl Gif {
 	}
 
 	pub fn images<'a>(&'a self) -> ImageIterator<'a> {
-		ImageIterator { inner: self }
+		ImageIterator {
+			gif: self,
+			veciter: self.blocks.iter(),
+		}
 	}
 }
 
 pub struct ImageIterator<'a> {
-	inner: &'a Gif,
+	gif: &'a Gif,
+	veciter: std::slice::Iter<'a, Block>,
 }
 
 impl<'a> Iterator for ImageIterator<'a> {
 	type Item = Image<'a>;
 
 	fn next(&mut self) -> Option<Self::Item> {
-		todo!()
+		let mut transparent = None;
+
+		let img = loop {
+			match self.veciter.next() {
+				Some(block) => match block {
+					Block::IndexedImage(img) => break img,
+					Block::Extension(Extension::GraphicControl(gce)) => {
+						if gce.is_transparent() {
+							transparent = Some(gce.transparency_index());
+						} else {
+							transparent = None;
+						}
+					}
+					_ => (),
+				},
+				None => return None,
+			}
+		};
+
+		if img.image_descriptor.color_table_present() {
+			Some(Image {
+				width: img.image_descriptor.width,
+				height: img.image_descriptor.height,
+				left_offset: img.image_descriptor.left,
+				top_offset: img.image_descriptor.top,
+				palette: &img.local_color_table.as_ref().unwrap(),
+				transparent_index: transparent,
+				indicies: &img.indicies,
+			})
+		} else {
+			Some(Image {
+				width: img.image_descriptor.width,
+				height: img.image_descriptor.height,
+				left_offset: img.image_descriptor.left,
+				top_offset: img.image_descriptor.top,
+				palette: self.gif.global_color_table.as_ref().unwrap(),
+				transparent_index: transparent,
+				indicies: &img.indicies,
+			})
+		}
 	}
 }
 
@@ -89,12 +132,28 @@ pub struct Image<'a> {
 }
 
 impl<'a> Image<'a> {
-	pub fn dimesnions(&self) -> (u16, u16) {
-		(self.width, self.height)
+	pub fn width(&self) -> u16 {
+		self.width
+	}
+
+	pub fn height(&self) -> u16 {
+		self.height
 	}
 
 	pub fn position(&self) -> (u16, u16) {
 		(self.left_offset, self.top_offset)
+	}
+
+	pub fn palette(&self) -> &ColorTable {
+		self.palette
+	}
+
+	pub fn transparent_index(&self) -> Option<u8> {
+		self.transparent_index
+	}
+
+	pub fn indicies(&self) -> &[u8] {
+		self.indicies
 	}
 }
 
