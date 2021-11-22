@@ -1,0 +1,19 @@
+[package]
+name = "gifed"
+version = "0.1.0"
+authors = ["Genevive Alfirevic <gen@nyble.dev>"]
+edition = "2018"
+license = "CC0-1.0"
+description = "Gif encoding and decoding with fine control"
+repository = "https://github.com/genuinebyte/gifed"
+
+[dev-dependencies]
+criterion = "0.3"
+png = "0.17.2"
+
+[dependencies]
+weezl = "0.1.5"
+
+[[bench]]
+name = "lzw_encode"
+harness = false

@@ -1,0 +1,14 @@
+[package]
+name = "gifprobe"
+version = "0.1.0"
+authors = ["Genevive Alfirevic <gen@nyble.dev"]
+edition = "2018"
+license = "CC0-1.0"
+description = "Print the details of a gif to stdout; ffprobe for gif"
+repository = "https://github.com/genuinebyte/gifed"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+owo-colors = "2.0.0"
+gifed = { path = "../gifed" }
