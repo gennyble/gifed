@@ -20,6 +20,19 @@ always will be, one of the main goals of this crate.
 [weezl-crates]: https://crates.io/crates/weezl
 [rgb-crates]: https://crates.io/crates/rgb
 
+#### Past V1
+- [ ] A Reader that tries it's best to recover, even if the data is mangled.
+
+### Relevant Writings
+
+- [gif87a][gif87a]
+- [gif89a][gif89a]
+- [Netscape Looping Extension][netscape]
+
+[gif87a]: https://www.w3.org/Graphics/GIF/spec-gif87.txt
+[gif89a]: https://www.w3.org/Graphics/GIF/spec-gif89a.txt
+[netscape]: http://www.vurdalakov.net/misc/gif/netscape-looping-application-extension
+
 ## gifprobe
 Similar to FFMPEG's ffprobe, gifprobe will print details of a gif to stdout.
 
