@@ -121,6 +121,12 @@ impl<'a> Iterator for ImageIterator<'a> {
 	}
 }
 
+pub struct FrameIterator<'a> {
+	gif: &'a Gif,
+	veciter: std::slice::Iter<'a, Block>,
+	buffer: Vec<u8>,
+}
+
 pub struct Image<'a> {
 	pub(crate) width: u16,
 	pub(crate) height: u16,
@@ -155,6 +161,16 @@ impl<'a> Image<'a> {
 	pub fn indicies(&self) -> &[u8] {
 		self.indicies
 	}
+}
+
+pub struct Frame {
+	width: u16,
+	height: u16,
+	palette: ColorTable,
+	transparent_index: Option<u8>,
+	indicies: Vec<u8>,
+	delay_after_draw: u16,
+	user_input_flag: bool,
 }
 
 #[cfg(test)]

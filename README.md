@@ -5,7 +5,7 @@ This crate is still pretty rough. I hope to make it feature complete and
 intuitive to use while still allowing fine grained control over the file itself, which has been and 
 always will be, one of the main goals of this crate.
 
-### TODO
+### Gifed TODO
 - [x] Writing GIF87a
 - [x] Writing GIF89a
 - [x] Automatically select the lowest version possible when writing
@@ -19,3 +19,9 @@ always will be, one of the main goals of this crate.
 
 [weezl-crates]: https://crates.io/crates/weezl
 [rgb-crates]: https://crates.io/crates/rgb
+
+## gifprobe
+Similar to FFMPEG's ffprobe, gifprobe will print details of a gif to stdout.
+
+# License
+gided and gifprobe are licensed under Creative Commons Zero 1.0; they're in the public domain. Attribution is appreciated, but not required.
