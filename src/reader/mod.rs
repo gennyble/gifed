@@ -37,22 +37,7 @@ impl GifReader {
 
 		loop {
 			match Self::read_block(&mut reader)? {
-				Some(block) => {
-					/*match &block {
-						Block::IndexedImage(_) => println!("Indexed Image"),
-						Block::BlockedImage(_) => println!("Blocked Image"),
-						Block::Extension(ext) => match ext {
-							Extension::GraphicControl(_) => println!("Graphic Cotrol Extension"),
-							Extension::Looping(_) => println!("Netscape Extension"),
-							Extension::Comment(vec) => {
-								println!("Comment Extension {:X}", vec.len())
-							}
-							Extension::Application(_) => todo!(),
-						},
-					}*/
-
-					gif.blocks.push(block)
-				}
+				Some(block) => gif.blocks.push(block),
 				None => return Ok(gif),
 			}
 		}
@@ -162,7 +147,6 @@ impl GifReader {
 		let lzw_csize = reader.u8().ok_or(DecodingError::UnexpectedEof)?;
 
 		let compressed_data = reader.take_and_collapse_subblocks();
-		println!("c{}", compressed_data.len());
 
 		let mut decompress = weezl::decode::Decoder::new(weezl::BitOrder::Lsb, lzw_csize);
 		//TODO: remove unwrap
