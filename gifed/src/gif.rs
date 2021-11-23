@@ -1,10 +1,12 @@
-use std::{fs::File, io::Write, path::Path};
+use std::{fs::File, io::Write, iter::Peekable, path::Path};
 
 use crate::{
-	block::{extension::Extension, Block, ColorTable, ScreenDescriptor, Version},
+	block::{
+		encode_block, extension::GraphicControl, Block, ColorTable, ScreenDescriptor, Version,
+	},
 	colorimage,
 	writer::GifBuilder,
-	ColorImage,
+	Color, ColorImage,
 };
 pub struct Gif {
 	pub header: Version,
@@ -38,17 +40,8 @@ impl Gif {
 		};
 
 		for block in self.blocks.iter() {
-			match block {
-				Block::IndexedImage(image) => {
-					boxed = image.as_boxed_slice(mcs);
-					out.extend_from_slice(&*boxed);
-				}
-				//Block::BlockedImage(_) => unreachable!(),
-				Block::Extension(ext) => {
-					boxed = ext.into();
-					out.extend_from_slice(&*boxed);
-				}
-			}
+			boxed = encode_block(mcs, block);
+			out.extend_from_slice(&*boxed);
 		}
 
 		// Write Trailer
@@ -84,7 +77,7 @@ impl<'a> Iterator for ImageIterator<'a> {
 			match self.veciter.next() {
 				Some(block) => match block {
 					Block::IndexedImage(img) => break img,
-					Block::Extension(Extension::GraphicControl(gce)) => {
+					Block::GraphicControlExtension(gce) => {
 						if gce.is_transparent() {
 							transparent = Some(gce.transparency_index());
 						} else {
@@ -121,56 +114,84 @@ impl<'a> Iterator for ImageIterator<'a> {
 	}
 }
 
+pub struct Image<'a> {
+	pub width: u16,
+	pub height: u16,
+	pub left_offset: u16,
+	pub top_offset: u16,
+	pub palette: &'a ColorTable,
+	pub transparent_index: Option<u8>,
+	pub indicies: &'a [u8],
+}
+
+impl<'a> Image<'a> {
+	pub fn rgba(&self) -> Option<Vec<u8>> {
+		let mut rgba = vec![0; self.indicies.len() * 4];
+
+		for (image_index, &color_index) in self.indicies.iter().enumerate() {
+			match self.transparent_index {
+				Some(trans) if trans == color_index => {
+					rgba[image_index as usize * 4] = 0;
+					rgba[image_index * 4 + 1] = 0;
+					rgba[image_index * 4 + 2] = 0;
+					rgba[image_index * 4 + 3] = 0;
+				}
+				_ => {
+					if let Some(color) = self.palette.get(color_index) {
+						rgba[image_index * 4] = color.r;
+						rgba[image_index * 4 + 1] = color.g;
+						rgba[image_index * 4 + 2] = color.b;
+						rgba[image_index * 4 + 3] = 255;
+					} else {
+						return None;
+					}
+				}
+			}
+		}
+
+		Some(rgba)
+	}
+
+	pub fn rgb(&self, transparent_replace: Color) -> Option<Vec<u8>> {
+		let mut rgb = vec![0; self.indicies.len() * 3];
+
+		for (image_index, &color_index) in self.indicies.iter().enumerate() {
+			match self.transparent_index {
+				Some(trans) if trans == color_index => {
+					rgb[image_index as usize * 4] = transparent_replace.r;
+					rgb[image_index * 3 + 1] = transparent_replace.g;
+					rgb[image_index * 3 + 2] = transparent_replace.b;
+				}
+				_ => {
+					if let Some(color) = self.palette.get(color_index) {
+						rgb[image_index * 3] = color.r;
+						rgb[image_index * 3 + 1] = color.g;
+						rgb[image_index * 3 + 2] = color.b;
+					} else {
+						return None;
+					}
+				}
+			}
+		}
+
+		Some(rgb)
+	}
+}
+
 pub struct FrameIterator<'a> {
 	gif: &'a Gif,
 	veciter: std::slice::Iter<'a, Block>,
 	buffer: Vec<u8>,
 }
 
-pub struct Image<'a> {
-	pub(crate) width: u16,
-	pub(crate) height: u16,
-	left_offset: u16,
-	top_offset: u16,
-	pub(crate) palette: &'a ColorTable,
-	pub(crate) transparent_index: Option<u8>,
-	pub(crate) indicies: &'a [u8],
-}
-
-impl<'a> Image<'a> {
-	pub fn width(&self) -> u16 {
-		self.width
-	}
-
-	pub fn height(&self) -> u16 {
-		self.height
-	}
-
-	pub fn position(&self) -> (u16, u16) {
-		(self.left_offset, self.top_offset)
-	}
-
-	pub fn palette(&self) -> &ColorTable {
-		self.palette
-	}
-
-	pub fn transparent_index(&self) -> Option<u8> {
-		self.transparent_index
-	}
-
-	pub fn indicies(&self) -> &[u8] {
-		self.indicies
-	}
-}
-
 pub struct Frame {
-	width: u16,
-	height: u16,
-	palette: ColorTable,
-	transparent_index: Option<u8>,
-	indicies: Vec<u8>,
-	delay_after_draw: u16,
-	user_input_flag: bool,
+	pub width: u16,
+	pub height: u16,
+	pub palette: ColorTable,
+	pub transparent_index: Option<u8>,
+	pub indicies: Vec<u8>,
+	pub delay_after_draw: u16,
+	pub user_input_flag: bool,
 }
 
 #[cfg(test)]
