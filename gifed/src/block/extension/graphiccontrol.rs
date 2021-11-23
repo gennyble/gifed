@@ -22,7 +22,7 @@ impl GraphicControl {
 		};
 
 		ret.set_disposal_method(disposal_method);
-		ret.user_input(user_input_flag);
+		ret.set_user_input(user_input_flag);
 		ret.transparency(transparency_flag);
 
 		ret
@@ -51,7 +51,11 @@ impl GraphicControl {
 		self.transparency_index
 	}
 
-	pub fn user_input(&mut self, flag: bool) {
+	pub fn user_input(&self) -> bool {
+		self.packed & 0b000_000_1_0 > 0
+	}
+
+	pub fn set_user_input(&mut self, flag: bool) {
 		if flag {
 			self.packed |= 0b000_000_1_0;
 		} else {

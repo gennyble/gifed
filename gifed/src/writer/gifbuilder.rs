@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use crate::block::{extension::Extension, Block, ColorTable, ScreenDescriptor, Version};
+use crate::block::{Block, ColorTable, LoopCount, ScreenDescriptor, Version};
 use crate::writer::ImageBuilder;
 use crate::{EncodingError, Gif};
 
@@ -55,7 +55,7 @@ impl GifBuilder {
 		}
 
 		if let Some(gce) = ib.get_graphic_control() {
-			self.blocks.push(Block::Extension(gce.into()));
+			self.blocks.push(Block::GraphicControlExtension(gce));
 		}
 
 		match ib.build() {
@@ -71,9 +71,8 @@ impl GifBuilder {
 		self
 	}*/
 
-	pub fn repeat(mut self, count: u16) -> Self {
-		self.blocks
-			.push(Block::Extension(Extension::Looping(count)));
+	pub fn repeat(mut self, count: LoopCount) -> Self {
+		self.blocks.push(Block::LoopingExtension(count));
 		self
 	}
 

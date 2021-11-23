@@ -10,7 +10,7 @@ use std::{
 
 use crate::{
 	block::{
-		extension::{Application, Extension, GraphicControl},
+		extension::{Application, GraphicControl},
 		Block, ColorTable, CompressedImage, ImageDescriptor, IndexedImage, ScreenDescriptor,
 		Version,
 	},
@@ -104,13 +104,11 @@ impl GifReader {
 					.ok_or(DecodingError::UnexpectedEof)?;
 				reader.skip(1); // Skip block terminator
 
-				Ok(Block::Extension(Extension::GraphicControl(
-					GraphicControl::from(data),
-				)))
+				Ok(Block::GraphicControlExtension(GraphicControl::from(data)))
 			}
-			0xFE => Ok(Block::Extension(Extension::Comment(
+			0xFE => Ok(Block::CommentExtension(
 				reader.take_and_collapse_subblocks(),
-			))),
+			)),
 			0x01 => todo!(), //TODO: do; plain text extension
 			0xFF => {
 				//TODO: error instead of unwraps
@@ -120,11 +118,11 @@ impl GifReader {
 					TryInto::try_into(reader.take(3).unwrap()).unwrap();
 				let data = reader.take_and_collapse_subblocks();
 
-				Ok(Block::Extension(Extension::Application(Application {
+				Ok(Block::ApplicationExtension(Application {
 					identifier,
 					authentication_code,
 					data,
-				})))
+				}))
 			}
 			_ => panic!("Unknown Extension Identifier!"),
 		}
