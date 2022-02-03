@@ -8,6 +8,8 @@ impl LZW {
 		let cc = 2u16.pow(minimum_size as u32);
 		let eoi = cc + 1;
 
+		println!("mcs {} | cc {}", minimum_size, cc);
+
 		// Fill dictionary with self-descriptive values
 		for value in 0..cc {
 			dictionary.insert(vec![value as u8], value);
@@ -44,6 +46,9 @@ impl LZW {
 					buffer.clear();
 					buffer.push(indicie);
 				} else {
+					println!("indicie is: {}", indicie);
+					println!("buffer is: {:?}", buffer);
+					println!("dictionary: {:?}", dictionary);
 					unreachable!()
 				}
 			}

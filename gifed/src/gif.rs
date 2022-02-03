@@ -71,18 +71,14 @@ impl<'a> Iterator for ImageIterator<'a> {
 	type Item = Image<'a>;
 
 	fn next(&mut self) -> Option<Self::Item> {
-		let mut transparent = None;
+		let mut graphic_control = None;
 
 		let img = loop {
 			match self.veciter.next() {
 				Some(block) => match block {
 					Block::IndexedImage(img) => break img,
 					Block::GraphicControlExtension(gce) => {
-						if gce.is_transparent() {
-							transparent = Some(gce.transparency_index());
-						} else {
-							transparent = None;
-						}
+						graphic_control = Some(gce.clone());
 					}
 					_ => (),
 				},
@@ -97,8 +93,8 @@ impl<'a> Iterator for ImageIterator<'a> {
 				left_offset: img.image_descriptor.left,
 				top_offset: img.image_descriptor.top,
 				palette: &img.local_color_table.as_ref().unwrap(),
-				transparent_index: transparent,
 				indicies: &img.indicies,
+				graphic_control,
 			})
 		} else {
 			Some(Image {
@@ -107,8 +103,8 @@ impl<'a> Iterator for ImageIterator<'a> {
 				left_offset: img.image_descriptor.left,
 				top_offset: img.image_descriptor.top,
 				palette: self.gif.global_color_table.as_ref().unwrap(),
-				transparent_index: transparent,
 				indicies: &img.indicies,
+				graphic_control,
 			})
 		}
 	}
@@ -120,8 +116,8 @@ pub struct Image<'a> {
 	pub left_offset: u16,
 	pub top_offset: u16,
 	pub palette: &'a ColorTable,
-	pub transparent_index: Option<u8>,
 	pub indicies: &'a [u8],
+	pub graphic_control: Option<GraphicControl>,
 }
 
 impl<'a> Image<'a> {
@@ -129,7 +125,7 @@ impl<'a> Image<'a> {
 		let mut rgba = vec![0; self.indicies.len() * 4];
 
 		for (image_index, &color_index) in self.indicies.iter().enumerate() {
-			match self.transparent_index {
+			match self.trans_index() {
 				Some(trans) if trans == color_index => {
 					rgba[image_index as usize * 4] = 0;
 					rgba[image_index * 4 + 1] = 0;
@@ -156,7 +152,7 @@ impl<'a> Image<'a> {
 		let mut rgb = vec![0; self.indicies.len() * 3];
 
 		for (image_index, &color_index) in self.indicies.iter().enumerate() {
-			match self.transparent_index {
+			match self.trans_index() {
 				Some(trans) if trans == color_index => {
 					rgb[image_index as usize * 4] = transparent_replace.r;
 					rgb[image_index * 3 + 1] = transparent_replace.g;
@@ -176,22 +172,13 @@ impl<'a> Image<'a> {
 
 		Some(rgb)
 	}
-}
 
-pub struct FrameIterator<'a> {
-	gif: &'a Gif,
-	veciter: std::slice::Iter<'a, Block>,
-	buffer: Vec<u8>,
-}
-
-pub struct Frame {
-	pub width: u16,
-	pub height: u16,
-	pub palette: ColorTable,
-	pub transparent_index: Option<u8>,
-	pub indicies: Vec<u8>,
-	pub delay_after_draw: u16,
-	pub user_input_flag: bool,
+	pub fn trans_index(&self) -> Option<u8> {
+		self.graphic_control
+			.as_ref()
+			.map(|gce| gce.transparent_index())
+			.flatten()
+	}
 }
 
 #[cfg(test)]

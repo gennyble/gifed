@@ -1,11 +1,11 @@
 pub struct Application {
-	pub(crate) identifier: String, // max len 8
+	pub(crate) identifier: [u8; 8],
 	pub(crate) authentication_code: [u8; 3],
 	pub(crate) data: Vec<u8>,
 }
 
 impl Application {
-	pub fn identifier(&self) -> &str {
+	pub fn identifier(&self) -> &[u8] {
 		&self.identifier
 	}
 

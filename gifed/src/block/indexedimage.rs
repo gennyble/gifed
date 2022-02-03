@@ -37,7 +37,7 @@ impl IndexedImage {
 			boxed = lct.into();
 			out.extend_from_slice(&*boxed);
 
-			lct.packed_len()
+			lct.packed_len() + 1
 		} else {
 			minimum_code_size + 1
 		};

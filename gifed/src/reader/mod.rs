@@ -113,7 +113,7 @@ impl GifReader {
 			0xFF => {
 				//TODO: error instead of unwraps
 				assert_eq!(Some(11), reader.u8());
-				let identifier = reader.take_lossy_utf8(8).unwrap().to_string();
+				let identifier = TryInto::try_into(reader.take(8).unwrap()).unwrap();
 				let authentication_code: [u8; 3] =
 					TryInto::try_into(reader.take(3).unwrap()).unwrap();
 				let data = reader.take_and_collapse_subblocks();

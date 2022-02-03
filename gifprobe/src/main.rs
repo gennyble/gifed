@@ -49,11 +49,11 @@ fn main() {
 				img_count += 1;
 			}
 			Block::GraphicControlExtension(gce) => {
-				hundreths += gce.delay_time() as usize;
+				hundreths += gce.delay() as usize;
 
 				println!(
 					"Graphic Control Extension\n\tDelay Time {}\n\tDispose {}",
-					format!("{}s", gce.delay_time() as f32 / 100.0).yellow(),
+					format!("{}s", gce.delay() as f32 / 100.0).yellow(),
 					gce.disposal_method().unwrap().yellow()
 				)
 			}
@@ -65,7 +65,7 @@ fn main() {
 				let auth = app.authentication_code();
 				println!(
 					"Application Extension\n\tIdentifier {}\n\tAuthentication {:02X} {:02X} {:02X}",
-					app.identifier().yellow(),
+					String::from_utf8_lossy(app.identifier()).yellow(),
 					auth[0].yellow(),
 					auth[1].yellow(),
 					auth[2].yellow()
