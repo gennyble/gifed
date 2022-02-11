@@ -12,4 +12,8 @@ impl Application {
 	pub fn authentication_code(&self) -> &[u8] {
 		&self.authentication_code
 	}
+
+	pub fn data(&self) -> &[u8] {
+		&self.data
+	}
 }

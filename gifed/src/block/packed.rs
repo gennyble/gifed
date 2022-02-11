@@ -1,83 +1,94 @@
-struct InnerPacked<T> {
-	raw: T,
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct GraphicPacked {
+	pub raw: u8,
 }
 
-impl InnerPacked<&u8> {
-	#[inline]
-	fn color_table(&self) -> bool {
-		self.raw & 0b1000_0000 > 0
+impl GraphicPacked {
+	pub(crate) fn new(packed: u8) -> Self {
+		Self { raw: packed }
 	}
 
-	#[inline]
-	fn color_resolution(&self) -> u8 {
-		(self.raw & 0b0111_0000) >> 4
+	pub fn reserved(&self) -> u8 {
+		graphic_reserved(self.raw)
 	}
 
-	#[inline]
-	fn logical_sort(&self) -> bool {
-		self.raw & 0b0000_1000 > 0
+	pub fn set_reserved(&mut self, reserved: u8) {
+		set_graphic_reserved(&mut self.raw, reserved)
 	}
 
-	#[inline]
-	fn image_sort(&self) -> bool {
-		self.raw & 0b0010_0000 > 0
+	pub fn disposal_method(&self) -> u8 {
+		disposal_method(self.raw)
 	}
 
-	#[inline]
-	fn color_table_size(&self) -> u8 {
-		self.raw & 0b0000_0111
+	pub fn set_disposal_method(&mut self, disposal: u8) {
+		set_disposal_method(&mut self.raw, disposal)
 	}
 
-	#[inline]
-	fn interlace(&self) -> bool {
-		self.raw & 0b0100_0000 > 0
+	pub fn user_input(&self) -> bool {
+		user_input(self.raw)
+	}
+
+	pub fn set_user_input(&mut self, flag: bool) {
+		set_user_input(&mut self.raw, flag)
+	}
+
+	pub fn transparent_color(&self) -> bool {
+		transparent_color(self.raw)
+	}
+
+	pub fn set_transparent_color(&mut self, flag: bool) {
+		set_transparent_flag(&mut self.raw, flag)
 	}
 }
 
-impl InnerPacked<&mut u8> {
-	#[inline]
-	fn set_color_table(&mut self, flag: bool) {
-		if flag {
-			*self.raw |= 0b1000_0000;
-		} else {
-			*self.raw &= 0b0111_1111;
-		}
-	}
+#[inline]
+fn graphic_reserved(packed: u8) -> u8 {
+	packed & 0b111_000_0_0 >> 5
+}
 
-	#[inline]
-	fn set_color_resolution(&mut self, resolution: u8) {
-		*self.raw |= (resolution & 0b0111_0000) << 4;
-	}
+#[inline]
+fn disposal_method(packed: u8) -> u8 {
+	packed & 0b000_111_0_0 >> 2
+}
 
-	#[inline]
-	fn set_logical_sort(&mut self, flag: bool) {
-		if flag {
-			*self.raw |= 0b0000_1000;
-		} else {
-			*self.raw &= 0b1111_0111;
-		}
-	}
+#[inline]
+fn user_input(packed: u8) -> bool {
+	packed & 0b000_000_1_0 > 0
+}
 
-	#[inline]
-	fn set_image_sort(&mut self, flag: bool) {
-		if flag {
-			*self.raw |= 0b0010_0000;
-		} else {
-			*self.raw &= 0b1101_1111;
-		}
-	}
+#[inline]
+fn transparent_color(packed: u8) -> bool {
+	packed & 0b000_000_0_1 > 0
+}
 
-	#[inline]
-	fn set_color_table_size(&mut self, size: u8) {
-		*self.raw |= size & 0b0000_0111;
-	}
+#[inline]
+fn set_graphic_reserved(packed: &mut u8, reserved: u8) {
+	// We care about the three least significant bits and we want to shift
+	// them so they're at the top, five away. From 000_001_1_1 to 111_000_0_0
+	*packed = (reserved & 0b0000_0111) << 5;
+}
 
-	#[inline]
-	fn set_interlace(&mut self, flag: bool) {
-		if flag {
-			*self.raw |= 0b0100_0000;
-		} else {
-			*self.raw &= 0b1011_1111;
-		}
+#[inline]
+fn set_disposal_method(packed: &mut u8, disposal: u8) {
+	// Care about 3 least significant bits and we want them three from the top
+	// from 000_001_1_1 into 000_111_0_0
+	*packed = (disposal & 0b0000_0111) << 2;
+}
+
+#[inline]
+fn set_user_input(packed: &mut u8, flag: bool) {
+	if flag {
+		*packed |= 0b000_000_1_0;
+	} else {
+		*packed &= 0b111_111_0_1;
+	}
+}
+
+#[inline]
+fn set_transparent_flag(packed: &mut u8, flag: bool) {
+	if flag {
+		*packed |= 0b000_000_0_1;
+	} else {
+		*packed &= 0b111_111_1_0;
 	}
 }

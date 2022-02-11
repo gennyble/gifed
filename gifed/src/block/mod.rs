@@ -57,7 +57,7 @@ fn encode_extension(block: &Block) -> Box<[u8]> {
 		Block::GraphicControlExtension(gce) => {
 			vec.push(0xF9); // Graphic control label
 			vec.push(0x04); // Block size for this extension is always 4
-			vec.push(gce.packed);
+			vec.push(gce.packed.raw);
 			vec.extend_from_slice(&gce.delay.to_le_bytes());
 			vec.push(gce.transparency_index);
 		}

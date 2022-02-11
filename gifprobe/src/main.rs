@@ -51,10 +51,17 @@ fn main() {
 			Block::GraphicControlExtension(gce) => {
 				hundreths += gce.delay() as usize;
 
+				let dispose_string = if let Some(dispose) = gce.disposal_method() {
+					dispose.to_string()
+				} else {
+					String::from("Reserved Value!");
+					format!("Reserved: {:b}", gce.packed().disposal_method())
+				};
+
 				println!(
 					"Graphic Control Extension\n\tDelay Time {}\n\tDispose {}",
 					format!("{}s", gce.delay() as f32 / 100.0).yellow(),
-					gce.disposal_method().unwrap().yellow()
+					dispose_string.yellow()
 				)
 			}
 			Block::LoopingExtension(_) => todo!(),
@@ -63,13 +70,26 @@ fn main() {
 			}
 			Block::ApplicationExtension(app) => {
 				let auth = app.authentication_code();
+				let app_ident = String::from_utf8_lossy(app.identifier());
+
 				println!(
 					"Application Extension\n\tIdentifier {}\n\tAuthentication {:02X} {:02X} {:02X}",
-					String::from_utf8_lossy(app.identifier()).yellow(),
+					app_ident.yellow(),
 					auth[0].yellow(),
 					auth[1].yellow(),
 					auth[2].yellow()
 				);
+
+				if app_ident == "NETSCAPE" {
+					let data = app.data();
+					let looping = u16::from_le_bytes([data[0], data[1]]);
+
+					if looping == 0 {
+						println!("\tLoop {}", "forever".yellow())
+					} else {
+						println!("\tLoop {}", looping.yellow());
+					}
+				}
 			}
 		}
 	}
