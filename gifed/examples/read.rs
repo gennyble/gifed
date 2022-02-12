@@ -17,8 +17,14 @@ fn main() {
 		let file = File::create(filename).unwrap();
 
 		let mut encoder = png::Encoder::new(file, image.width as u32, image.height as u32);
-		encoder.set_color(png::ColorType::Rgba);
+		encoder.set_color(png::ColorType::Indexed);
+		encoder.set_palette(image.palette.as_bytes());
+
+		if let Some(trns) = image.png_trns() {
+			encoder.set_trns(trns);
+		}
+
 		let mut writer = encoder.write_header().unwrap();
-		writer.write_image_data(&image.rgba().unwrap()).unwrap();
+		writer.write_image_data(&image.indicies).unwrap();
 	}
 }
