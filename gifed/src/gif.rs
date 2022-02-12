@@ -122,7 +122,7 @@ impl<'a> Image<'a> {
 		let mut rgba = vec![0; self.indicies.len() * 4];
 
 		for (image_index, &color_index) in self.indicies.iter().enumerate() {
-			match self.trans_index() {
+			match self.transparent_index() {
 				Some(trans) if trans == color_index => {
 					rgba[image_index as usize * 4] = 0;
 					rgba[image_index * 4 + 1] = 0;
@@ -149,7 +149,7 @@ impl<'a> Image<'a> {
 		let mut rgb = vec![0; self.indicies.len() * 3];
 
 		for (image_index, &color_index) in self.indicies.iter().enumerate() {
-			match self.trans_index() {
+			match self.transparent_index() {
 				Some(trans) if trans == color_index => {
 					rgb[image_index as usize * 4] = transparent_replace.r;
 					rgb[image_index * 3 + 1] = transparent_replace.g;
@@ -180,10 +180,28 @@ impl<'a> Image<'a> {
 		None
 	}
 
-	pub fn trans_index(&self) -> Option<u8> {
+	pub fn transparent_index(&self) -> Option<u8> {
 		self.graphic_control()
 			.map(|gce| gce.transparent_index())
 			.flatten()
+	}
+
+	pub fn png_trns(&self) -> Option<Vec<u8>> {
+		if let Some(trans_idx) = self.transparent_index() {
+			let mut trns = Vec::with_capacity(self.palette.len());
+
+			for idx in 0..self.palette.len() as u8 {
+				if idx == trans_idx {
+					trns.push(0u8);
+				} else {
+					trns.push(255);
+				}
+			}
+
+			return Some(trns);
+		}
+
+		None
 	}
 }
 

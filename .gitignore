@@ -4,3 +4,4 @@ Cargo.lock
 *.gif
 *.txt
 *.png
+**/examples/read

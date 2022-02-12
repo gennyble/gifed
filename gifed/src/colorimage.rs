@@ -49,7 +49,7 @@ impl<'a> TryFrom<Image<'a>> for ColorImage {
 			img.height,
 			img.indicies,
 			img.palette,
-			img.trans_index(),
+			img.transparent_index(),
 		)
 	}
 }
