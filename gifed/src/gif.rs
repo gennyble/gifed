@@ -57,56 +57,53 @@ impl Gif {
 	pub fn images<'a>(&'a self) -> ImageIterator<'a> {
 		ImageIterator {
 			gif: self,
-			veciter: self.blocks.iter(),
+			block_index: 0,
 		}
 	}
 }
 
 pub struct ImageIterator<'a> {
 	gif: &'a Gif,
-	veciter: std::slice::Iter<'a, Block>,
+	block_index: usize,
 }
 
 impl<'a> Iterator for ImageIterator<'a> {
 	type Item = Image<'a>;
 
 	fn next(&mut self) -> Option<Self::Item> {
-		let mut graphic_control = None;
+		let starting_block = self.block_index;
 
 		let img = loop {
-			match self.veciter.next() {
+			match self.gif.blocks.get(self.block_index) {
 				Some(block) => match block {
-					Block::IndexedImage(img) => break img,
-					Block::GraphicControlExtension(gce) => {
-						graphic_control = Some(gce.clone());
+					Block::IndexedImage(img) => {
+						// Step over this image so we don't hit it next time
+						self.block_index += 1;
+
+						break img;
 					}
 					_ => (),
 				},
 				None => return None,
 			}
+
+			self.block_index += 1;
 		};
 
-		if img.image_descriptor.color_table_present() {
-			Some(Image {
-				width: img.image_descriptor.width,
-				height: img.image_descriptor.height,
-				left_offset: img.image_descriptor.left,
-				top_offset: img.image_descriptor.top,
-				palette: &img.local_color_table.as_ref().unwrap(),
-				indicies: &img.indicies,
-				graphic_control,
-			})
-		} else {
-			Some(Image {
-				width: img.image_descriptor.width,
-				height: img.image_descriptor.height,
-				left_offset: img.image_descriptor.left,
-				top_offset: img.image_descriptor.top,
-				palette: self.gif.global_color_table.as_ref().unwrap(),
-				indicies: &img.indicies,
-				graphic_control,
-			})
-		}
+		let palette = img
+			.local_color_table
+			.as_ref()
+			.unwrap_or(self.gif.global_color_table.as_ref().unwrap());
+
+		Some(Image {
+			width: img.image_descriptor.width,
+			height: img.image_descriptor.height,
+			left_offset: img.image_descriptor.left,
+			top_offset: img.image_descriptor.top,
+			palette,
+			indicies: &img.indicies,
+			blocks: &self.gif.blocks[starting_block..self.block_index],
+		})
 	}
 }
 
@@ -117,7 +114,7 @@ pub struct Image<'a> {
 	pub top_offset: u16,
 	pub palette: &'a ColorTable,
 	pub indicies: &'a [u8],
-	pub graphic_control: Option<GraphicControl>,
+	pub blocks: &'a [Block],
 }
 
 impl<'a> Image<'a> {
@@ -173,9 +170,18 @@ impl<'a> Image<'a> {
 		Some(rgb)
 	}
 
+	pub fn graphic_control(&self) -> Option<&GraphicControl> {
+		for block in self.blocks {
+			if let Block::GraphicControlExtension(gce) = block {
+				return Some(gce);
+			}
+		}
+
+		None
+	}
+
 	pub fn trans_index(&self) -> Option<u8> {
-		self.graphic_control
-			.as_ref()
+		self.graphic_control()
 			.map(|gce| gce.transparent_index())
 			.flatten()
 	}
