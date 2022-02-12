@@ -44,6 +44,15 @@ impl ColorTable {
 		}
 		None
 	}
+
+	pub fn as_bytes(&self) -> Vec<u8> {
+		let mut bytes = Vec::with_capacity(self.table.len() * 3);
+		for color in &self.table {
+			bytes.extend_from_slice(&[color.r, color.g, color.b]);
+		}
+
+		bytes
+	}
 }
 
 impl Deref for ColorTable {
