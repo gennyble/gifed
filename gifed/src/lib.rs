@@ -11,7 +11,7 @@ use core::fmt;
 use std::error::Error;
 
 pub use color::Color;
-pub use colorimage::ColorImage;
+pub use colorimage::{RgbImage, RgbaImage};
 pub use gif::Gif;
 pub use lzw::LZW;
 

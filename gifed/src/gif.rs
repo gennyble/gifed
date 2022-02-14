@@ -1,12 +1,15 @@
-use std::{fs::File, io::Write, iter::Peekable, path::Path};
+use std::{convert::TryInto, fs::File, io::Write, iter::Peekable, path::Path, time::Duration};
 
 use crate::{
 	block::{
-		encode_block, extension::GraphicControl, Block, ColorTable, ScreenDescriptor, Version,
+		encode_block,
+		extension::{DisposalMethod, GraphicControl},
+		Block, ColorTable, ScreenDescriptor, Version,
 	},
-	colorimage,
+	colorimage::{RgbImage, RgbaImage},
+	reader::DecodingError,
 	writer::GifBuilder,
-	Color, ColorImage,
+	Color,
 };
 pub struct Gif {
 	pub header: Version,
@@ -60,6 +63,16 @@ impl Gif {
 			block_index: 0,
 		}
 	}
+}
+
+pub struct FrameIterator<'a> {
+	image_iterator: ImageIterator<'a>,
+	canvas: RgbaImage,
+	replace_after_draw: Option<RgbaImage>,
+}
+
+pub struct Frame<'a> {
+	images: Vec<Image<'a>>,
 }
 
 pub struct ImageIterator<'a> {
@@ -118,56 +131,12 @@ pub struct Image<'a> {
 }
 
 impl<'a> Image<'a> {
-	pub fn rgba(&self) -> Option<Vec<u8>> {
-		let mut rgba = vec![0; self.indicies.len() * 4];
-
-		for (image_index, &color_index) in self.indicies.iter().enumerate() {
-			match self.transparent_index() {
-				Some(trans) if trans == color_index => {
-					rgba[image_index as usize * 4] = 0;
-					rgba[image_index * 4 + 1] = 0;
-					rgba[image_index * 4 + 2] = 0;
-					rgba[image_index * 4 + 3] = 0;
-				}
-				_ => {
-					if let Some(color) = self.palette.get(color_index) {
-						rgba[image_index * 4] = color.r;
-						rgba[image_index * 4 + 1] = color.g;
-						rgba[image_index * 4 + 2] = color.b;
-						rgba[image_index * 4 + 3] = 255;
-					} else {
-						return None;
-					}
-				}
-			}
-		}
-
-		Some(rgba)
+	pub fn rgba(&self) -> Result<RgbaImage, DecodingError> {
+		self.try_into()
 	}
 
-	pub fn rgb(&self, transparent_replace: Color) -> Option<Vec<u8>> {
-		let mut rgb = vec![0; self.indicies.len() * 3];
-
-		for (image_index, &color_index) in self.indicies.iter().enumerate() {
-			match self.transparent_index() {
-				Some(trans) if trans == color_index => {
-					rgb[image_index as usize * 4] = transparent_replace.r;
-					rgb[image_index * 3 + 1] = transparent_replace.g;
-					rgb[image_index * 3 + 2] = transparent_replace.b;
-				}
-				_ => {
-					if let Some(color) = self.palette.get(color_index) {
-						rgb[image_index * 3] = color.r;
-						rgb[image_index * 3 + 1] = color.g;
-						rgb[image_index * 3 + 2] = color.b;
-					} else {
-						return None;
-					}
-				}
-			}
-		}
-
-		Some(rgb)
+	pub fn rgb(&self, transparent_replace: Color) -> Result<RgbImage, DecodingError> {
+		RgbImage::from_image(self, transparent_replace)
 	}
 
 	pub fn graphic_control(&self) -> Option<&GraphicControl> {
@@ -184,6 +153,30 @@ impl<'a> Image<'a> {
 		self.graphic_control()
 			.map(|gce| gce.transparent_index())
 			.flatten()
+	}
+
+	pub fn frame_control(&self) -> Option<FrameControl> {
+		if let Some(gce) = self.graphic_control() {
+			let delay = gce.delay_duration();
+			let user_input = gce.user_input();
+
+			match (delay.is_zero(), user_input) {
+				(true, true) => Some(FrameControl::Input),
+				(false, true) => Some(FrameControl::InputOrDelay(delay)),
+				(false, false) => Some(FrameControl::Delay(delay)),
+				(true, false) => None,
+			}
+		} else {
+			None
+		}
+	}
+
+	pub fn disposal_method(&self) -> DisposalMethod {
+		if let Some(gce) = self.graphic_control() {
+			gce.disposal_method().unwrap_or(DisposalMethod::NoAction)
+		} else {
+			DisposalMethod::NoAction
+		}
 	}
 
 	pub fn png_trns(&self) -> Option<Vec<u8>> {
@@ -203,6 +196,12 @@ impl<'a> Image<'a> {
 
 		None
 	}
+}
+
+pub enum FrameControl {
+	Delay(Duration),
+	Input,
+	InputOrDelay(Duration),
 }
 
 #[cfg(test)]
