@@ -12,7 +12,7 @@ always will be, one of the main goals of this crate.
 - [x] Read GIF87a
 - [x] Read GIF89a
 - [ ] Write API (~75%)
-- [ ] Read API (~25%)
+- [ ] Read API (~75%)
 - [ ] Feature to allow using the [weezl][weezl-crates] crate for LZW compression instead of the built-in
 - [ ] Feature to allow using the [rgb][rgb-crates] crate for the color type.
 - [ ] Well written and easy to understand docs! `bitvec` quality, but who can match that?
