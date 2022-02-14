@@ -95,6 +95,10 @@ impl GraphicControl {
 	pub fn delay_mut(&mut self) -> &mut u16 {
 		&mut self.delay
 	}
+
+	pub fn user_input(&self) -> bool {
+		self.packed.user_input()
+	}
 }
 
 impl From<[u8; 4]> for GraphicControl {
