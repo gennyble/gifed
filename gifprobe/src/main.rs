@@ -66,7 +66,12 @@ fn main() {
 			}
 			Block::LoopingExtension(_) => todo!(),
 			Block::CommentExtension(cmt) => {
-				println!("Comment Extension\n\tLength {}", cmt.len())
+				println!("Comment Extension\n\tLength {}", cmt.len().yellow());
+
+				match String::from_utf8(cmt) {
+					Ok(cmt) => println!("\tString \"{}\"", cmt.yellow()),
+					Err(_) => println!("\tString {}", "Content is not utf8".red()),
+				}
 			}
 			Block::ApplicationExtension(app) => {
 				let auth = app.authentication_code();
