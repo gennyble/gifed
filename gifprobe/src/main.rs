@@ -1,10 +1,9 @@
-use std::{convert::TryInto, fs::File, io::Write, path::Path};
-
 use gifed::{
-	block::{extension::GraphicControl, Block, ColorTable, IndexedImage, Version},
+	block::{
+		Block::{self},
+		IndexedImage,
+	},
 	reader::GifReader,
-	writer::{GifBuilder, ImageBuilder},
-	Color,
 };
 use owo_colors::OwoColorize;
 
@@ -94,6 +93,19 @@ fn main() {
 					} else {
 						println!("\tLoop {}", looping.yellow());
 					}
+				} else {
+					let data = app.data();
+
+					match String::from_utf8(data.to_vec()) {
+						Ok(s) => println!(
+							"\tData {}",
+							format!("Valid UTF-8, {} bytes", s.len()).yellow()
+						),
+						Err(_e) => println!(
+							"\tData {}",
+							format!("Invalid UTF-8, {} bytes", data.len()).yellow()
+						),
+					}
 				}
 			}
 		}
@@ -117,7 +129,7 @@ fn describe_image(bli: &IndexedImage) {
 		bli.image_descriptor.height.yellow(),
 	);
 
-	if bli.image_descriptor.color_table_present() {
+	if bli.image_descriptor.has_color_table() {
 		println!(
 			"\tLocal Color Table Present {}\n\tLocal Color Table Size {}",
 			"Yes".green(),
