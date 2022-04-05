@@ -25,7 +25,7 @@ impl GraphicControl {
 
 		ret.set_disposal_method(disposal_method);
 		ret.packed.set_user_input(user_input_flag);
-		ret.packed.set_transparent_color(transparency_flag);
+		ret.packed.set_transparent_flag(transparency_flag);
 
 		ret
 	}
@@ -61,7 +61,7 @@ impl GraphicControl {
 	/// Returns the index that should be replaced by a fully transparent pixel
 	/// if the transparency flag is set, or None if it's not set.
 	pub fn transparent_index(&self) -> Option<u8> {
-		if self.packed.transparent_color() {
+		if self.packed.transparent_flag() {
 			Some(self.transparency_index)
 		} else {
 			None
@@ -77,7 +77,7 @@ impl GraphicControl {
 	/// Sets the transparent index and flips the flag to indicate a transparent
 	/// index is present if `index` is `Some`.
 	pub fn set_transparent_index(&mut self, index: Option<u8>) {
-		self.packed.set_transparent_color(index.is_some());
+		self.packed.set_transparent_flag(index.is_some());
 
 		if let Some(index) = index {
 			self.transparency_index = index;

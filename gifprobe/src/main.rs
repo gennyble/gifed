@@ -24,7 +24,7 @@ fn main() {
 		gif.screen_descriptor.height.yellow()
 	);
 
-	if gif.screen_descriptor.color_table_present() {
+	if gif.screen_descriptor.has_color_table() {
 		println!(
 			"\tGlobal Color Table Present {}\n\tGlobal Color Table Size {}",
 			"Yes".green(),

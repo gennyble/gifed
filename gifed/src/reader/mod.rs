@@ -30,7 +30,7 @@ impl GifReader {
 
 		let mut gif = Self::read_required(&mut reader)?;
 
-		if gif.screen_descriptor.color_table_present() {
+		if gif.screen_descriptor.has_color_table() {
 			let gct_size = gif.screen_descriptor.color_table_len() * 3;
 			gif.global_color_table = Some(Self::read_color_table(&mut reader, gct_size)?);
 		}

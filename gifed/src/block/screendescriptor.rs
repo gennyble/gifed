@@ -1,9 +1,11 @@
 use std::convert::TryInto;
 
+use super::{packed::ScreenPacked, ColorTable};
+
 pub struct ScreenDescriptor {
 	pub width: u16,
 	pub height: u16,
-	pub packed: u8,
+	pub packed: ScreenPacked,
 	pub background_color_index: u8,
 	pub pixel_aspect_ratio: u8,
 }
@@ -13,37 +15,32 @@ impl ScreenDescriptor {
 		Self {
 			width,
 			height,
-			packed: 0,
+			packed: ScreenPacked { raw: 0 },
 			background_color_index: 0,
 			pixel_aspect_ratio: 0,
 		}
 	}
 
-	pub fn set_color_table_present(&mut self, is_present: bool) {
-		if is_present {
-			self.packed |= 0b1000_0000;
+	/// This data structure **does not** contain the color table, only a flag to
+	/// indicate if one is present and it's size.
+	pub fn set_color_table_metadata<T: AsRef<ColorTable>>(&mut self, table: Option<T>) {
+		if let Some(table) = table {
+			let table = table.as_ref();
+			self.packed.set_color_table(true);
+			self.packed.set_color_table_size(table.packed_len());
 		} else {
-			self.packed &= 0b0111_1111;
+			self.packed.set_color_table(false);
+			// This is not strictly needed, but we'll clear it anyway
+			self.packed.set_color_table_size(0);
 		}
 	}
 
-	pub fn set_color_table_size(&mut self, size: u8) {
-		println!("scts: {}", size);
-		// GCT size is calulated by raising two to this number plus one,
-		// so we have to work backwards.
-		let size = (size as f32).log2().ceil() - 1f32;
-		self.packed |= size as u8;
-	}
-
-	//TODO: Setter for sort flag in packed field
-	//TODO: Setter for color resolution in packed field
-
-	pub fn color_table_present(&self) -> bool {
-		self.packed & 0b1000_0000 != 0
+	pub fn has_color_table(&self) -> bool {
+		self.packed.color_table()
 	}
 
 	pub fn color_table_len(&self) -> usize {
-		crate::packed_to_color_table_length(self.packed & 0b0000_0111)
+		crate::packed_to_color_table_length(self.packed.color_table_size())
 	}
 }
 
@@ -52,7 +49,7 @@ impl From<&ScreenDescriptor> for Box<[u8]> {
 		let mut vec = vec![];
 		vec.extend_from_slice(&lsd.width.to_le_bytes());
 		vec.extend_from_slice(&lsd.height.to_le_bytes());
-		vec.push(lsd.packed);
+		vec.push(lsd.packed.raw);
 		vec.push(lsd.background_color_index);
 		vec.push(lsd.pixel_aspect_ratio);
 
@@ -71,7 +68,7 @@ impl From<[u8; 7]> for ScreenDescriptor {
 		Self {
 			width,
 			height,
-			packed,
+			packed: ScreenPacked { raw: packed },
 			background_color_index,
 			pixel_aspect_ratio,
 		}

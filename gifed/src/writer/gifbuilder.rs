@@ -1,5 +1,6 @@
 use std::convert::TryInto;
 
+use crate::block::packed::ScreenPacked;
 use crate::block::{Block, ColorTable, LoopCount, ScreenDescriptor, Version};
 use crate::writer::ImageBuilder;
 use crate::{EncodingError, Gif};
@@ -84,15 +85,14 @@ impl GifBuilder {
 		let mut lsd = ScreenDescriptor {
 			width: self.width,
 			height: self.height,
-			packed: 0, // Set later
+			packed: ScreenPacked { raw: 0 }, // Set later
 			background_color_index: self.background_color_index,
 			pixel_aspect_ratio: 0, //TODO: Allow configuring
 		};
 
 		if let Some(gct) = &self.global_color_table {
 			println!("build {}", gct.len());
-			lsd.set_color_table_present(true);
-			lsd.set_color_table_size((gct.len() - 1) as u8);
+			lsd.set_color_table_metadata(Some(gct));
 		}
 
 		Ok(Gif {
