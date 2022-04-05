@@ -7,7 +7,7 @@ use gifed::{
 };
 
 fn main() {
-	let reader = GifReader::file("examples/simulation.gif").unwrap();
+	let reader = GifReader::file("/home/gen/Downloads/emilia_bar.gif").unwrap();
 
 	// Create the directory we're we'll dump all the PNGs
 	std::fs::create_dir_all("examples/read/").unwrap();

@@ -135,7 +135,7 @@ impl GifReader {
 			.ok_or(DecodingError::UnexpectedEof)?;
 		let descriptor = ImageDescriptor::from(buffer);
 
-		let color_table = if descriptor.color_table_present() {
+		let color_table = if descriptor.has_color_table() {
 			let size = descriptor.color_table_size() * 3;
 			Some(Self::read_color_table(&mut reader, size)?)
 		} else {

@@ -4,6 +4,7 @@ use crate::{
 	block::{
 		encode_block,
 		extension::{DisposalMethod, GraphicControl},
+		packed::ImagePacked,
 		Block, ColorTable, ScreenDescriptor, Version,
 	},
 	colorimage::{RgbImage, RgbaImage},
@@ -113,6 +114,7 @@ impl<'a> Iterator for ImageIterator<'a> {
 			height: img.image_descriptor.height,
 			left_offset: img.image_descriptor.left,
 			top_offset: img.image_descriptor.top,
+			packed: img.image_descriptor.packed,
 			palette,
 			indicies: &img.indicies,
 			blocks: &self.gif.blocks[starting_block..self.block_index],
@@ -125,6 +127,7 @@ pub struct Image<'a> {
 	pub height: u16,
 	pub left_offset: u16,
 	pub top_offset: u16,
+	pub packed: ImagePacked,
 	pub palette: &'a ColorTable,
 	pub indicies: &'a [u8],
 	pub blocks: &'a [Block],
