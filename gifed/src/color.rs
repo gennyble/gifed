@@ -11,6 +11,12 @@ impl Color {
 	}
 }
 
+impl AsRef<Color> for Color {
+	fn as_ref(&self) -> &Color {
+		self
+	}
+}
+
 impl From<[u8; 3]> for Color {
 	fn from(arr: [u8; 3]) -> Self {
 		Self {

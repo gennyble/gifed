@@ -1,39 +1,36 @@
 use std::convert::TryInto;
 
+use super::{packed::ImagePacked, ColorTable};
+
 pub struct ImageDescriptor {
-	// Image Seperator 0x2C is the first byte //
 	pub left: u16,
 	pub top: u16,
 	pub width: u16,
 	pub height: u16,
-	pub packed: u8,
+	pub packed: ImagePacked,
 }
 
 impl ImageDescriptor {
-	pub fn set_color_table_present(&mut self, is_present: bool) {
-		if is_present {
-			self.packed |= 0b1000_0000;
+	/// This data structure **does not** contain the color table, only a flag to
+	/// indicate if one is present and it's size.
+	pub fn set_color_table_metadata<T: AsRef<ColorTable>>(&mut self, table: Option<T>) {
+		if let Some(table) = table {
+			let table = table.as_ref();
+			self.packed.set_color_table(true);
+			self.packed.set_color_table_size(table.packed_len());
 		} else {
-			self.packed &= 0b0111_1111;
+			self.packed.set_color_table(false);
+			// This is not strictly needed, but we'll clear it anyway
+			self.packed.set_color_table_size(0);
 		}
 	}
 
-	pub fn set_color_table_size(&mut self, size: u8) {
-		// GCT size is calulated by raising two to this number plus one,
-		// so we have to work backwards.
-		let size = (size as f32).log2().ceil() - 1f32;
-		self.packed |= size as u8;
-	}
-
-	//TODO: Setter for sort flag in packed field
-	//TODO: Setter for interlace flag in packed field
-
-	pub fn color_table_present(&self) -> bool {
-		self.packed & 0b1000_0000 != 0
+	pub fn has_color_table(&self) -> bool {
+		self.packed.color_table()
 	}
 
 	pub fn color_table_size(&self) -> usize {
-		crate::packed_to_color_table_length(self.packed & 0b0000_0111)
+		crate::packed_to_color_table_length(self.packed.color_table_size())
 	}
 }
 
@@ -46,7 +43,7 @@ impl From<&ImageDescriptor> for Box<[u8]> {
 		vec.extend_from_slice(&desc.top.to_le_bytes());
 		vec.extend_from_slice(&desc.width.to_le_bytes());
 		vec.extend_from_slice(&desc.height.to_le_bytes());
-		vec.push(desc.packed);
+		vec.push(desc.packed.raw);
 
 		vec.into_boxed_slice()
 	}
@@ -65,7 +62,7 @@ impl From<[u8; 9]> for ImageDescriptor {
 			top,
 			width,
 			height,
-			packed,
+			packed: ImagePacked { raw: packed },
 		}
 	}
 }

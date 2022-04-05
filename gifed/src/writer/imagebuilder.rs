@@ -1,6 +1,7 @@
 use crate::{
 	block::{
 		extension::{DisposalMethod, GraphicControl},
+		packed::ImagePacked,
 		ColorTable, ImageDescriptor, IndexedImage, Version,
 	},
 	EncodingError,
@@ -116,12 +117,11 @@ impl ImageBuilder {
 			top: self.top_offset,
 			width: self.width,
 			height: self.height,
-			packed: 0, // Set later
+			packed: ImagePacked { raw: 0 }, // Set later
 		};
 
 		if let Some(lct) = &self.color_table {
-			imgdesc.set_color_table_present(true);
-			imgdesc.set_color_table_size(lct.packed_len());
+			imgdesc.set_color_table_metadata(Some(lct));
 		}
 
 		Ok(IndexedImage {

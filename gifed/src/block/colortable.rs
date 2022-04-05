@@ -36,9 +36,9 @@ impl ColorTable {
 		self.table.get(index as usize).map(|v| v.clone())
 	}
 
-	pub fn from_color(&self, color: Color) -> Option<u8> {
+	pub fn from_color<C: AsRef<Color>>(&self, color: C) -> Option<u8> {
 		for (i, &c) in self.table.iter().enumerate() {
-			if c == color {
+			if c == *color.as_ref() {
 				return Some(i as u8);
 			}
 		}
@@ -60,6 +60,12 @@ impl Deref for ColorTable {
 
 	fn deref(&self) -> &Self::Target {
 		&self.table
+	}
+}
+
+impl AsRef<ColorTable> for ColorTable {
+	fn as_ref(&self) -> &ColorTable {
+		self
 	}
 }
 
