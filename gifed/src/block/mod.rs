@@ -62,7 +62,17 @@ fn encode_extension(block: &Block) -> Box<[u8]> {
 			vec.push(gce.transparency_index);
 		}
 		Block::CommentExtension(comment) => todo!(),
-		Block::ApplicationExtension(app) => todo!(),
+		Block::ApplicationExtension(app) => {
+			vec.push(0xFF); // Application extension label
+			vec.push(0x0B); // 11 bytes, fixed, for the ident and auth
+			vec.extend_from_slice(&app.identifier);
+			vec.extend_from_slice(&app.authentication_code);
+
+			for chnk in app.data.chunks(255) {
+				vec.push(chnk.len() as u8);
+				vec.extend_from_slice(chnk);
+			}
+		}
 		Block::LoopingExtension(lc) => {
 			vec.push(0xFF); // Application extension label
 			vec.push(0x0B); // 11 bytes in this block
