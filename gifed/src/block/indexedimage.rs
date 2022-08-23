@@ -1,5 +1,7 @@
 use std::convert::TryFrom;
 
+use weezl::encode::Encoder;
+
 use super::{ColorTable, ImageDescriptor};
 use crate::LZW;
 
@@ -49,7 +51,11 @@ impl IndexedImage {
 		// First write out the MCS
 		out.push(mcs);
 
-		let compressed = LZW::encode(mcs, &self.indicies);
+		//FIXME: gen- This seems  broken
+		//let compressed = LZW::encode(mcs, &self.indicies);
+		let compressed = Encoder::new(weezl::BitOrder::Lsb, mcs)
+			.encode(&self.indicies)
+			.unwrap();
 
 		for chunk in compressed.chunks(255) {
 			out.push(chunk.len() as u8);
