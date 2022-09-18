@@ -33,17 +33,18 @@ impl RgbaImage {
 					data[image_index * 4 + 1] = 0;
 					data[image_index * 4 + 2] = 0;
 					data[image_index * 4 + 3] = 0;
+					continue;
 				}
-			} else {
-				let color = table
-					.get(*color_index)
-					.ok_or(DecodingError::ColorIndexOutOfBounds)?;
-
-				data[image_index * 4] = color.r;
-				data[image_index * 4 + 1] = color.g;
-				data[image_index * 4 + 2] = color.b;
-				data[image_index * 4 + 3] = 255;
 			}
+
+			let color = table
+				.get(*color_index)
+				.ok_or(DecodingError::ColorIndexOutOfBounds)?;
+
+			data[image_index * 4] = color.r;
+			data[image_index * 4 + 1] = color.g;
+			data[image_index * 4 + 2] = color.b;
+			data[image_index * 4 + 3] = 255;
 		}
 
 		Ok(Self {
