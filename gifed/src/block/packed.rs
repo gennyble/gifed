@@ -127,7 +127,7 @@ impl ImagePacked {
 	pub fn set_color_table_size(&mut self, size: u8) {
 		// The color table is the least significant already, don't do anything
 		// except select the bits
-		self.raw = size & 0b0_0_0_00_111;
+		self.raw |= size & 0b0_0_0_00_111;
 	}
 }
 
@@ -174,6 +174,6 @@ impl ScreenPacked {
 	}
 
 	pub fn set_color_table_size(&mut self, size: u8) {
-		self.raw = size & 0b0_0_0_00_111;
+		self.raw |= size & 0b0_0_0_00_111;
 	}
 }
