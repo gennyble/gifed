@@ -12,7 +12,7 @@ use std::error::Error;
 
 pub use color::Color;
 pub use colorimage::{RgbImage, RgbaImage};
-pub use gif::Gif;
+pub use gif::{Gif, Image};
 pub use lzw::LZW;
 
 /// Perform the algorithm to get the length of a color table from
