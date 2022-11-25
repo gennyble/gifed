@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use super::{packed::ScreenPacked, ColorTable};
+use super::{packed::ScreenPacked, Palette};
 
 pub struct ScreenDescriptor {
 	pub width: u16,
@@ -23,7 +23,7 @@ impl ScreenDescriptor {
 
 	/// This data structure **does not** contain the color table, only a flag to
 	/// indicate if one is present and it's size.
-	pub fn set_color_table_metadata<T: AsRef<ColorTable>>(&mut self, table: Option<T>) {
+	pub fn set_color_table_metadata<T: AsRef<Palette>>(&mut self, table: Option<T>) {
 		if let Some(table) = table {
 			let table = table.as_ref();
 			self.packed.set_color_table(true);

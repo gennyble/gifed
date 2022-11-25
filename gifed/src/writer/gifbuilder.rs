@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 
 use crate::block::packed::ScreenPacked;
-use crate::block::{Block, ColorTable, LoopCount, ScreenDescriptor, Version};
+use crate::block::{Block, LoopCount, Palette, ScreenDescriptor, Version};
 use crate::writer::ImageBuilder;
 use crate::{EncodingError, Gif};
 
@@ -10,7 +10,7 @@ pub struct GifBuilder {
 	width: u16,
 	height: u16,
 	background_color_index: u8,
-	global_color_table: Option<ColorTable>,
+	global_color_table: Option<Palette>,
 	blocks: Vec<Block>,
 	error: Option<EncodingError>,
 }
@@ -28,7 +28,7 @@ impl GifBuilder {
 		}
 	}
 
-	pub fn palette(mut self, palette: ColorTable) -> Self {
+	pub fn palette(mut self, palette: Palette) -> Self {
 		self.global_color_table = Some(palette);
 		self
 	}

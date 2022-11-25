@@ -6,11 +6,11 @@ use std::{
 };
 
 #[derive(Clone, Debug)]
-pub struct ColorTable {
+pub struct Palette {
 	table: Vec<Color>,
 }
 
-impl ColorTable {
+impl Palette {
 	pub fn new() -> Self {
 		Self { table: vec![] }
 	}
@@ -18,6 +18,9 @@ impl ColorTable {
 	/// Returns the number of colors in the color table as used by the packed
 	/// fields in the Logical Screen Descriptor and Image Descriptor. You can
 	/// get the actual size with the [`len`](struct.ColorTable.html#method.len) method.
+	///
+	/// This value is equal to `log2([Palette::len]) - 1`. In other words, 2^(n + 1) will
+	/// give you the same value as [Palette::len]. (where `n` is the value returned)
 	pub fn packed_len(&self) -> u8 {
 		((self.table.len() as f32).log2().ceil() - 1f32) as u8
 	}
@@ -55,7 +58,7 @@ impl ColorTable {
 	}
 }
 
-impl Deref for ColorTable {
+impl Deref for Palette {
 	type Target = [Color];
 
 	fn deref(&self) -> &Self::Target {
@@ -63,32 +66,14 @@ impl Deref for ColorTable {
 	}
 }
 
-impl AsRef<ColorTable> for ColorTable {
-	fn as_ref(&self) -> &ColorTable {
+impl AsRef<Palette> for Palette {
+	fn as_ref(&self) -> &Palette {
 		self
 	}
 }
 
-impl From<&ColorTable> for Box<[u8]> {
-	fn from(table: &ColorTable) -> Self {
-		let mut vec = vec![];
-
-		for color in table.iter() {
-			vec.extend_from_slice(&[color.r, color.g, color.b]);
-		}
-
-		let packed_len = 2usize.pow(table.packed_len() as u32 + 1);
-		let padding = (packed_len as usize - table.len()) * 3;
-		if padding > 0 {
-			vec.extend_from_slice(&vec![0; padding]);
-		}
-
-		vec.into_boxed_slice()
-	}
-}
-
 //TODO: TryFrom Vec<u8> (must be multiple of 3 len) and From Vec<Color>
-impl TryFrom<&[u8]> for ColorTable {
+impl TryFrom<&[u8]> for Palette {
 	type Error = ();
 
 	fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
@@ -105,7 +90,7 @@ impl TryFrom<&[u8]> for ColorTable {
 	}
 }
 
-impl TryFrom<Vec<Color>> for ColorTable {
+impl TryFrom<Vec<Color>> for Palette {
 	type Error = EncodingError;
 
 	fn try_from(value: Vec<Color>) -> Result<Self, Self::Error> {
@@ -117,7 +102,7 @@ impl TryFrom<Vec<Color>> for ColorTable {
 	}
 }
 
-impl TryFrom<Vec<(u8, u8, u8)>> for ColorTable {
+impl TryFrom<Vec<(u8, u8, u8)>> for Palette {
 	type Error = EncodingError;
 
 	fn try_from(value: Vec<(u8, u8, u8)>) -> Result<Self, Self::Error> {

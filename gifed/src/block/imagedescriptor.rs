@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use super::{packed::ImagePacked, ColorTable};
+use super::{packed::ImagePacked, Palette};
 
 pub struct ImageDescriptor {
 	pub left: u16,
@@ -13,7 +13,7 @@ pub struct ImageDescriptor {
 impl ImageDescriptor {
 	/// This data structure **does not** contain the color table, only a flag to
 	/// indicate if one is present and it's size.
-	pub fn set_color_table_metadata<T: AsRef<ColorTable>>(&mut self, table: Option<T>) {
+	pub fn set_color_table_metadata<T: AsRef<Palette>>(&mut self, table: Option<T>) {
 		if let Some(table) = table {
 			let table = table.as_ref();
 			self.packed.set_color_table(true);
