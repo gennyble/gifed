@@ -7,7 +7,6 @@ use crate::{
 		packed::ImagePacked,
 		Block, Palette, ScreenDescriptor, Version,
 	},
-	colorimage::{RgbImage, RgbaImage},
 	reader::DecodingError,
 	writer::GifBuilder,
 	Color,
@@ -63,16 +62,6 @@ impl Gif {
 			block_index: 0,
 		}
 	}
-}
-
-pub struct FrameIterator<'a> {
-	image_iterator: ImageIterator<'a>,
-	canvas: RgbaImage,
-	replace_after_draw: Option<RgbaImage>,
-}
-
-pub struct Frame<'a> {
-	images: Vec<Image<'a>>,
 }
 
 pub struct ImageIterator<'a> {
@@ -133,14 +122,6 @@ pub struct Image<'a> {
 }
 
 impl<'a> Image<'a> {
-	pub fn rgba(&self) -> Result<RgbaImage, DecodingError> {
-		self.try_into()
-	}
-
-	pub fn rgb(&self, transparent_replace: Color) -> Result<RgbImage, DecodingError> {
-		RgbImage::from_image(self, transparent_replace)
-	}
-
 	pub fn graphic_control(&self) -> Option<&GraphicControl> {
 		for block in self.blocks {
 			if let Block::GraphicControlExtension(gce) = block {
