@@ -150,41 +150,6 @@ impl GifReader {
 	}
 }
 
-#[derive(Debug)]
-pub enum DecodeError {
-	IoError(std::io::Error),
-	UnknownVersionString,
-	UnexpectedEof,
-	ColorIndexOutOfBounds,
-}
-
-impl Error for DecodeError {}
-impl fmt::Display for DecodeError {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			DecodeError::IoError(error) => write!(f, "{}", error),
-			DecodeError::UnknownVersionString => {
-				write!(f, "File did not start with a valid header")
-			}
-			DecodeError::UnexpectedEof => {
-				write!(f, "Found the end of the data at a weird spot")
-			}
-			DecodeError::ColorIndexOutOfBounds => {
-				write!(
-					f,
-					"The image contained an index not found in the color table"
-				)
-			}
-		}
-	}
-}
-
-impl From<std::io::Error> for DecodeError {
-	fn from(ioerror: std::io::Error) -> Self {
-		DecodeError::IoError(ioerror)
-	}
-}
-
 struct SmartReader {
 	inner: Vec<u8>,
 	position: usize,
@@ -260,5 +225,40 @@ impl SmartReader {
 		}
 
 		ret
+	}
+}
+
+#[derive(Debug)]
+pub enum DecodeError {
+	IoError(std::io::Error),
+	UnknownVersionString,
+	UnexpectedEof,
+	ColorIndexOutOfBounds,
+}
+
+impl Error for DecodeError {}
+impl fmt::Display for DecodeError {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			DecodeError::IoError(error) => write!(f, "{}", error),
+			DecodeError::UnknownVersionString => {
+				write!(f, "File did not start with a valid header")
+			}
+			DecodeError::UnexpectedEof => {
+				write!(f, "Found the end of the data at a weird spot")
+			}
+			DecodeError::ColorIndexOutOfBounds => {
+				write!(
+					f,
+					"The image contained an index not found in the color table"
+				)
+			}
+		}
+	}
+}
+
+impl From<std::io::Error> for DecodeError {
+	fn from(ioerror: std::io::Error) -> Self {
+		DecodeError::IoError(ioerror)
 	}
 }
