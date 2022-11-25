@@ -38,7 +38,15 @@ pub enum LoopCount {
 	Number(u16),
 }
 
-pub(crate) fn encode_block(mcs: u8, block: &Block) -> Vec<u8> {
+impl LoopCount {
+	/// Set a fixed loop count. A value of 0 means forever, which you should
+	/// probably use [LoopCount::Forever] for.
+	pub fn count(count: u16) -> Self {
+		Self::Number(count)
+	}
+}
+
+pub(crate) fn encode_block(block: &Block) -> Vec<u8> {
 	match block {
 		Block::CompressedImage(img) => img.as_bytes(),
 		Block::GraphicControlExtension(_) => encode_extension(block),

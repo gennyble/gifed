@@ -6,6 +6,12 @@ pub enum Version {
 	Gif89a,
 }
 
+impl Version {
+	pub fn as_bytes(&self) -> &[u8] {
+		self.into()
+	}
+}
+
 impl From<&Version> for &[u8] {
 	fn from(version: &Version) -> Self {
 		match version {

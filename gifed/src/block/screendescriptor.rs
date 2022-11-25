@@ -42,18 +42,16 @@ impl ScreenDescriptor {
 	pub fn color_table_len(&self) -> usize {
 		crate::packed_to_color_table_length(self.packed.color_table_size())
 	}
-}
 
-impl From<&ScreenDescriptor> for Box<[u8]> {
-	fn from(lsd: &ScreenDescriptor) -> Self {
+	pub fn as_bytes(&self) -> Vec<u8> {
 		let mut vec = vec![];
-		vec.extend_from_slice(&lsd.width.to_le_bytes());
-		vec.extend_from_slice(&lsd.height.to_le_bytes());
-		vec.push(lsd.packed.raw);
-		vec.push(lsd.background_color_index);
-		vec.push(lsd.pixel_aspect_ratio);
+		vec.extend_from_slice(&self.width.to_le_bytes());
+		vec.extend_from_slice(&self.height.to_le_bytes());
+		vec.push(self.packed.raw);
+		vec.push(self.background_color_index);
+		vec.push(self.pixel_aspect_ratio);
 
-		vec.into_boxed_slice()
+		vec
 	}
 }
 

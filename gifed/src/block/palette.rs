@@ -25,6 +25,10 @@ impl Palette {
 		((self.table.len() as f32).log2().ceil() - 1f32) as u8
 	}
 
+	pub fn lzw_code_size(&self) -> u8 {
+		self.packed_len() + 1
+	}
+
 	/// Returns the number of items in the table
 	pub fn len(&self) -> usize {
 		self.table.len()

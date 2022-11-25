@@ -2,8 +2,8 @@ use std::io::Write;
 
 use crate::{
 	block::{
-		packed::ScreenPacked, Block, CompressedImage, IndexedImage, Palette, ScreenDescriptor,
-		Version,
+		packed::ScreenPacked, Block, CompressedImage, IndexedImage, LoopCount, Palette,
+		ScreenDescriptor, Version,
 	},
 	EncodeError, Gif,
 };
@@ -48,6 +48,12 @@ impl GifBuilder {
 		self
 	}
 
+	pub fn repeat(mut self, count: LoopCount) -> Self {
+		self.blocks
+			.push(BuildBlock::Block(Block::LoopingExtension(count)));
+		self
+	}
+
 	pub fn image<I: Into<EncodeImage>>(mut self, img: I) -> Self {
 		match img.into() {
 			EncodeImage::CompressedImage(ci) => self
@@ -87,7 +93,7 @@ impl GifBuilder {
 			blocks: vec![],
 		};
 
-		let lzw_gct_size = gif.global_color_table.as_ref().map(|ct| ct.packed_len());
+		let lzw_gct_size = gif.global_color_table.as_ref().map(|ct| ct.lzw_code_size());
 
 		for block in self.blocks {
 			match block {

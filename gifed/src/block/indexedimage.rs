@@ -33,9 +33,13 @@ impl IndexedImage {
 	/// LZW Minimum Code Size here. It is equal to the value of [Palette::packed_len], but
 	/// must also be at least 2.
 	pub fn compress(self, lzw_code_size: Option<u8>) -> Result<CompressedImage, EncodeError> {
-		//TODO: gen- The old code had a +1 here. Why?
+		// gen- The old code had a +1 here. Why?
+		// In the spec, under the section for the Logical Screen Descriptor, it
+		// mentions that the size in the packed field is calculated with
+		// 2 ^ (packed + 1) and the code size is supposed to be the "number
+		// of color bits", which I guess is the exponent?
 		let mcs = match self.local_color_table.as_ref() {
-			Some(palette) => palette.packed_len(),
+			Some(palette) => palette.lzw_code_size(),
 			None => match lzw_code_size {
 				None => return Err(EncodeError::InvalidCodeSize { lzw_code_size: 0 }),
 				Some(mcs) => mcs,
