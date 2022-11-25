@@ -9,7 +9,6 @@ repository = "https://github.com/genuinebyte/gifed"
 
 [dev-dependencies]
 criterion = "0.3"
-png = "0.17.2"
 
 [dependencies]
 weezl = "0.1.5"
