@@ -9,8 +9,10 @@ This crate is still pretty rough. I hope to make it feature complete and intuiti
 - [x] Automatically select the lowest version possible when writing
 - [x] Read GIF87a
 - [x] Read GIF89a
-- [ ] Write API (~75%)
-- [ ] Read API (~75%)
+- [ ] Reader
+- [x] Streaming Reader
+- [x] Writer
+- [ ] Streaming Writer
 - [ ] Feature to allow using the [weezl][weezl-crates] crate for LZW compression instead of the built-in
 - [ ] Feature to allow using the [rgb][rgb-crates] crate for the color type.
 - [ ] Well written and easy to understand docs! `bitvec` quality, but who can match that?
@@ -18,8 +20,13 @@ This crate is still pretty rough. I hope to make it feature complete and intuiti
 [weezl-crates]: https://crates.io/crates/weezl
 [rgb-crates]: https://crates.io/crates/rgb
 
-#### Past V1
-- [ ] A Reader that tries it's best to recover, even if the data is mangled.
+#### Extensions
+These are part of the 89a spec, but are kept separate as they're not "core" to the spec
+
+- [x] Application Extension
+- [x] Comment Extension
+- [ ] Plain Text Extension
+- [ ] Netscape Looping Extension ([details][netscape])
 
 ### Relevant Writings
 
