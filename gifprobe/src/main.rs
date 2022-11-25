@@ -1,9 +1,11 @@
+use std::ops::Range;
+
 use gifed::{
 	block::{
 		Block::{self},
-		IndexedImage,
+		CompressedImage,
 	},
-	reader::GifReader,
+	reader::Decoder,
 };
 use owo_colors::OwoColorize;
 
@@ -15,36 +17,49 @@ fn main() {
 		return;
 	};
 
-	let gif = GifReader::file(&file).unwrap();
+	let decoder = Decoder::file(&file).unwrap();
+	let mut reader = decoder.read().unwrap();
 
-	println!("Version {}", gif.header.yellow());
+	println!("Version {}", reader.version.yellow());
 	println!(
 		"Logical Screen Descriptor\n\tDimensions {}x{}",
-		gif.screen_descriptor.width.yellow(),
-		gif.screen_descriptor.height.yellow()
+		reader.screen_descriptor.width.yellow(),
+		reader.screen_descriptor.height.yellow()
 	);
 
-	if gif.screen_descriptor.has_color_table() {
+	if reader.screen_descriptor.has_color_table() {
 		println!(
 			"\tGlobal Color Table Present {}\n\tGlobal Color Table Size {}",
 			"Yes".green(),
-			gif.screen_descriptor.color_table_len().green()
+			reader.screen_descriptor.color_table_len().green()
 		);
 	} else {
 		println!(
 			"\tGlobal Color Table Present {}\n\tGlobal Color Table Size {}",
 			"No".red(),
-			gif.screen_descriptor.color_table_len().red()
+			reader.screen_descriptor.color_table_len().red()
 		);
 	}
 
 	let mut img_count = 0;
 	let mut hundreths: usize = 0;
 
-	for block in gif.blocks {
+	loop {
+		let block = match reader.block() {
+			Ok(Some(block)) => block,
+			Ok(None) => break,
+			Err(e) => {
+				eprintln!("error reading file: {e}");
+				std::process::exit(-1);
+			}
+		};
+
+		let offset = block.offset;
+		let block = block.block;
+
 		match block {
-			Block::IndexedImage(img) => {
-				describe_image(&img);
+			Block::CompressedImage(img) => {
+				describe_image(&img, offset);
 				img_count += 1;
 			}
 			Block::GraphicControlExtension(gce) => {
@@ -57,8 +72,11 @@ fn main() {
 					format!("Reserved: {:b}", gce.packed().disposal_method())
 				};
 
+				print!("Graphic Control Extension");
+				print_offset(offset);
+
 				println!(
-					"Graphic Control Extension\n\tDelay Time {}\n\tDispose {}",
+					"\tDelay Time {}\n\tDispose {}",
 					format!("{}s", gce.delay() as f32 / 100.0).yellow(),
 					dispose_string.yellow()
 				)
@@ -120,9 +138,12 @@ fn main() {
 	);
 }
 
-fn describe_image(bli: &IndexedImage) {
+fn describe_image(bli: &CompressedImage, offset: Range<usize>) {
+	print!("Image");
+	print_offset(offset);
+
 	println!(
-		"Image\n\tOffset {}x{}\n\tDimensions {}x{}",
+		"\tOffset {}x{}\n\tDimensions {}x{}",
 		bli.image_descriptor.left.yellow(),
 		bli.image_descriptor.top.yellow(),
 		bli.image_descriptor.width.yellow(),
@@ -141,5 +162,29 @@ fn describe_image(bli: &IndexedImage) {
 			"No".red(),
 			bli.image_descriptor.color_table_size().red()
 		);
+	}
+}
+
+fn print_offset(offset: Range<usize>) {
+	print!(" [");
+	print_usize(offset.start);
+	print!(" … ");
+	print_usize(offset.end);
+	println!("]");
+}
+
+fn print_usize(offset: usize) {
+	let bytes = offset.to_le_bytes();
+	let mut seen_nonzero = false;
+	for byte in bytes {
+		if byte == 0 {
+			if seen_nonzero {
+				break;
+			}
+		} else {
+			seen_nonzero = true;
+		}
+
+		print!("{:02X}", byte.cyan());
 	}
 }
