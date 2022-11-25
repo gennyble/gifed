@@ -24,23 +24,15 @@ impl Gif {
 	pub fn as_bytes(&self) -> Vec<u8> {
 		let mut out = vec![];
 
-		out.extend_from_slice((&self.header).into());
+		out.extend_from_slice(&self.header.as_bytes());
+		out.extend_from_slice(&self.screen_descriptor.as_bytes());
 
-		let mut boxed: Box<[u8]> = (&self.screen_descriptor).into();
-		out.extend_from_slice(&*boxed);
-
-		// While we output the color table, grab it's length to use when
-		// outputting the image, or 0 if we don't have a GCT
-		let mcs = if let Some(gct) = &self.global_color_table {
+		if let Some(gct) = &self.global_color_table {
 			out.extend_from_slice(&gct.as_bytes());
-
-			gct.packed_len()
-		} else {
-			0
-		};
+		}
 
 		for block in self.blocks.iter() {
-			out.extend_from_slice(&encode_block(mcs, block));
+			out.extend_from_slice(&encode_block(block));
 		}
 
 		// Write Trailer
