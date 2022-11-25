@@ -1,10 +1,9 @@
-use std::convert::TryFrom;
-
 use weezl::encode::Encoder;
 
 use super::{ImageDescriptor, Palette};
-use crate::LZW;
+use crate::writer::EncodeError;
 
+#[derive(Clone, Debug)]
 pub struct IndexedImage {
 	pub image_descriptor: ImageDescriptor,
 	pub local_color_table: Option<Palette>,
@@ -28,27 +27,19 @@ impl IndexedImage {
 		self.image_descriptor.height
 	}
 
-	pub fn as_boxed_slice(&self, minimum_code_size: u8) -> Box<[u8]> {
-		let mut out = vec![];
-
-		let mut boxed: Box<[u8]> = (&self.image_descriptor).into();
-		out.extend_from_slice(&*boxed);
-
-		// Get the mcs while we write out the color table
-		let mut mcs = if let Some(lct) = &self.local_color_table {
-			out.extend_from_slice(&lct.as_bytes());
-
-			lct.packed_len() + 1
-		} else {
-			minimum_code_size + 1
+	/// The `lzw_code_size` should be None if there is a local color table present. If
+	/// this image is using the Global Color Table, you must provide an
+	/// LZW Minimum Code Size here. It is equal to the value of [Palette::packed_len], but
+	/// must also be at least 2.
+	pub fn compress(self, lzw_code_size: Option<u8>) -> Result<CompressedImage, EncodeError> {
+		//TODO: gen- The old code had a +1 here. Why?
+		let mcs = match lzw_code_size {
+			Some(mcs) => mcs,
+			None => match self.local_color_table.as_ref() {
+				None => return Err(EncodeError::InvalidCodeSize { lzw_code_size: 0 }),
+				Some(lct) => lct.packed_len(),
+			},
 		};
-
-		if mcs < 2 {
-			mcs = 2; // Must be true: 0 <= mcs <= 8
-		}
-
-		// First write out the MCS
-		out.push(mcs);
 
 		//FIXME: gen- This seems  broken
 		//let compressed = LZW::encode(mcs, &self.indicies);
@@ -56,20 +47,42 @@ impl IndexedImage {
 			.encode(&self.indicies)
 			.unwrap();
 
+		let mut blocks = vec![];
 		for chunk in compressed.chunks(255) {
-			out.push(chunk.len() as u8);
-			out.extend_from_slice(chunk);
+			blocks.push(chunk.to_vec());
 		}
-		// Data block length 0 to indicate an end
-		out.push(0x00);
 
-		out.into_boxed_slice()
+		Ok(CompressedImage {
+			image_descriptor: self.image_descriptor,
+			local_color_table: self.local_color_table,
+			lzw_code_size: mcs,
+			blocks,
+		})
 	}
 }
 
 pub struct CompressedImage {
 	pub image_descriptor: ImageDescriptor,
 	pub local_color_table: Option<Palette>,
-	pub lzw_minimum_code_size: u8,
+	pub lzw_code_size: u8,
 	pub blocks: Vec<Vec<u8>>,
+}
+
+impl CompressedImage {
+	pub fn as_bytes(&self) -> Vec<u8> {
+		let mut ret = vec![];
+
+		ret.extend_from_slice(&self.image_descriptor.as_bytes());
+		ret.push(self.lzw_code_size);
+
+		for block in &self.blocks {
+			ret.push(block.len() as u8);
+			ret.extend_from_slice(block);
+		}
+
+		// A zero length block indicates the end of the data stream
+		ret.push(0x00);
+
+		ret
+	}
 }

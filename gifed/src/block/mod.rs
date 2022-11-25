@@ -19,7 +19,7 @@ use self::extension::Application;
 use self::extension::GraphicControl;
 
 pub enum Block {
-	IndexedImage(IndexedImage),
+	CompressedImage(CompressedImage),
 	//TODO: Extension(Extension),
 	GraphicControlExtension(GraphicControl),
 	CommentExtension(Vec<u8>),
@@ -38,9 +38,9 @@ pub enum LoopCount {
 	Number(u16),
 }
 
-pub(crate) fn encode_block(mcs: u8, block: &Block) -> Box<[u8]> {
+pub(crate) fn encode_block(mcs: u8, block: &Block) -> Vec<u8> {
 	match block {
-		Block::IndexedImage(img) => img.as_boxed_slice(mcs),
+		Block::CompressedImage(img) => img.as_bytes(),
 		Block::GraphicControlExtension(_) => encode_extension(block),
 		Block::CommentExtension(_) => encode_extension(block),
 		Block::ApplicationExtension(_) => encode_extension(block),
@@ -48,12 +48,12 @@ pub(crate) fn encode_block(mcs: u8, block: &Block) -> Box<[u8]> {
 	}
 }
 
-fn encode_extension(block: &Block) -> Box<[u8]> {
+fn encode_extension(block: &Block) -> Vec<u8> {
 	let mut vec = vec![];
 	vec.push(0x21); // Extension Introducer
 
 	match block {
-		Block::IndexedImage(_) => unreachable!(),
+		Block::CompressedImage(_) => unreachable!(),
 		Block::GraphicControlExtension(gce) => {
 			vec.push(0xF9); // Graphic control label
 			vec.push(0x04); // Block size for this extension is always 4
@@ -87,6 +87,8 @@ fn encode_extension(block: &Block) -> Box<[u8]> {
 		}
 	}
 
-	vec.push(0x00); // Zero length sub-block indicates end of extension
-	vec.into_boxed_slice()
+	// Zero length sub-block indicates end of extension
+	vec.push(0x00);
+
+	vec
 }

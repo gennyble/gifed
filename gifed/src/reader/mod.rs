@@ -4,22 +4,22 @@ use std::{
 	error::Error,
 	fmt,
 	fs::File,
-	io::{BufRead, BufReader, Read},
+	io::Read,
 	path::Path,
 };
 
 use crate::{
 	block::{
 		extension::{Application, GraphicControl},
-		Block, CompressedImage, ImageDescriptor, IndexedImage, Palette, ScreenDescriptor, Version,
+		Block, CompressedImage, ImageDescriptor, Palette, ScreenDescriptor, Version,
 	},
-	color, Gif,
+	Gif,
 };
 
 pub struct GifReader {}
 
 impl GifReader {
-	pub fn file<P: AsRef<Path>>(path: P) -> Result<Gif, DecodingError> {
+	pub fn file<P: AsRef<Path>>(path: P) -> Result<Gif, DecodeError> {
 		let mut file = File::open(path)?;
 		let mut reader = SmartReader {
 			inner: vec![],
@@ -42,17 +42,17 @@ impl GifReader {
 		}
 	}
 
-	fn read_required(reader: &mut SmartReader) -> Result<Gif, DecodingError> {
+	fn read_required(reader: &mut SmartReader) -> Result<Gif, DecodeError> {
 		let version = match reader.take_lossy_utf8(6).as_deref() {
 			Some("GIF87a") => Version::Gif87a,
 			Some("GIF89a") => Version::Gif89a,
-			_ => return Err(DecodingError::UnknownVersionString),
+			_ => return Err(DecodeError::UnknownVersionString),
 		};
 
 		let mut lsd_buffer: [u8; 7] = [0; 7];
 		reader
 			.read_exact(&mut lsd_buffer)
-			.ok_or(DecodingError::UnexpectedEof)?;
+			.ok_or(DecodeError::UnexpectedEof)?;
 
 		let lsd = ScreenDescriptor::from(lsd_buffer);
 
@@ -64,17 +64,17 @@ impl GifReader {
 		})
 	}
 
-	fn read_color_table(reader: &mut SmartReader, size: usize) -> Result<Palette, DecodingError> {
+	fn read_color_table(reader: &mut SmartReader, size: usize) -> Result<Palette, DecodeError> {
 		let buffer = reader
 			.take(size as usize)
-			.ok_or(DecodingError::UnexpectedEof)?;
+			.ok_or(DecodeError::UnexpectedEof)?;
 
 		// We get the size from the screen descriptor. This should never return Err
 		Ok(Palette::try_from(&buffer[..]).unwrap())
 	}
 
-	fn read_block(reader: &mut SmartReader) -> Result<Option<Block>, DecodingError> {
-		let block_id = reader.u8().ok_or(DecodingError::UnexpectedEof)?;
+	fn read_block(reader: &mut SmartReader) -> Result<Option<Block>, DecodeError> {
+		let block_id = reader.u8().ok_or(DecodeError::UnexpectedEof)?;
 
 		//TODO: remove panic
 		match block_id {
@@ -88,7 +88,7 @@ impl GifReader {
 		}
 	}
 
-	fn read_extension(reader: &mut SmartReader) -> Result<Block, DecodingError> {
+	fn read_extension(reader: &mut SmartReader) -> Result<Block, DecodeError> {
 		let extension_id = reader.u8().expect("File ended early");
 
 		match extension_id {
@@ -97,7 +97,7 @@ impl GifReader {
 				let mut data = [0u8; 4];
 				reader
 					.read_exact(&mut data)
-					.ok_or(DecodingError::UnexpectedEof)?;
+					.ok_or(DecodeError::UnexpectedEof)?;
 				reader.skip(1); // Skip block terminator
 
 				Ok(Block::GraphicControlExtension(GraphicControl::from(data)))
@@ -124,11 +124,11 @@ impl GifReader {
 		}
 	}
 
-	fn read_image(mut reader: &mut SmartReader) -> Result<Block, DecodingError> {
+	fn read_image(mut reader: &mut SmartReader) -> Result<Block, DecodeError> {
 		let mut buffer = [0u8; 9];
 		reader
 			.read_exact(&mut buffer)
-			.ok_or(DecodingError::UnexpectedEof)?;
+			.ok_or(DecodeError::UnexpectedEof)?;
 		let descriptor = ImageDescriptor::from(buffer);
 
 		let color_table = if descriptor.has_color_table() {
@@ -138,42 +138,38 @@ impl GifReader {
 			None
 		};
 
-		let lzw_csize = reader.u8().ok_or(DecodingError::UnexpectedEof)?;
+		let lzw_csize = reader.u8().ok_or(DecodeError::UnexpectedEof)?;
+		let compressed_data = reader.take_data_subblocks();
 
-		let compressed_data = reader.take_and_collapse_subblocks();
-
-		let mut decompress = weezl::decode::Decoder::new(weezl::BitOrder::Lsb, lzw_csize);
-		//TODO: remove unwrap
-		let mut decompressed_data = decompress.decode(&compressed_data).unwrap();
-
-		Ok(Block::IndexedImage(IndexedImage {
+		Ok(Block::CompressedImage(CompressedImage {
 			image_descriptor: descriptor,
 			local_color_table: color_table,
-			indicies: decompressed_data,
+			lzw_code_size: lzw_csize,
+			blocks: compressed_data,
 		}))
 	}
 }
 
 #[derive(Debug)]
-pub enum DecodingError {
+pub enum DecodeError {
 	IoError(std::io::Error),
 	UnknownVersionString,
 	UnexpectedEof,
 	ColorIndexOutOfBounds,
 }
 
-impl Error for DecodingError {}
-impl fmt::Display for DecodingError {
+impl Error for DecodeError {}
+impl fmt::Display for DecodeError {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			DecodingError::IoError(error) => write!(f, "{}", error),
-			DecodingError::UnknownVersionString => {
+			DecodeError::IoError(error) => write!(f, "{}", error),
+			DecodeError::UnknownVersionString => {
 				write!(f, "File did not start with a valid header")
 			}
-			DecodingError::UnexpectedEof => {
+			DecodeError::UnexpectedEof => {
 				write!(f, "Found the end of the data at a weird spot")
 			}
-			DecodingError::ColorIndexOutOfBounds => {
+			DecodeError::ColorIndexOutOfBounds => {
 				write!(
 					f,
 					"The image contained an index not found in the color table"
@@ -183,9 +179,9 @@ impl fmt::Display for DecodingError {
 	}
 }
 
-impl From<std::io::Error> for DecodingError {
+impl From<std::io::Error> for DecodeError {
 	fn from(ioerror: std::io::Error) -> Self {
-		DecodingError::IoError(ioerror)
+		DecodeError::IoError(ioerror)
 	}
 }
 

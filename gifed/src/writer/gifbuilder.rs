@@ -59,10 +59,12 @@ impl GifBuilder {
 			self.blocks.push(Block::GraphicControlExtension(gce));
 		}
 
+		//FIXME
+		/*
 		match ib.build() {
 			Ok(image) => self.blocks.push(Block::IndexedImage(image)),
 			Err(e) => self.error = Some(e),
-		}
+		}*/
 
 		self
 	}

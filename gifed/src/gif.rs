@@ -7,7 +7,7 @@ use crate::{
 		packed::ImagePacked,
 		Block, Palette, ScreenDescriptor, Version,
 	},
-	reader::DecodingError,
+	reader::DecodeError,
 	writer::GifBuilder,
 	Color,
 };
@@ -42,8 +42,7 @@ impl Gif {
 		};
 
 		for block in self.blocks.iter() {
-			boxed = encode_block(mcs, block);
-			out.extend_from_slice(&*boxed);
+			out.extend_from_slice(&encode_block(mcs, block));
 		}
 
 		// Write Trailer
@@ -78,7 +77,7 @@ impl<'a> Iterator for ImageIterator<'a> {
 		let img = loop {
 			match self.gif.blocks.get(self.block_index) {
 				Some(block) => match block {
-					Block::IndexedImage(img) => {
+					Block::CompressedImage(img) => {
 						// Step over this image so we don't hit it next time
 						self.block_index += 1;
 
@@ -104,7 +103,7 @@ impl<'a> Iterator for ImageIterator<'a> {
 			top_offset: img.image_descriptor.top,
 			packed: img.image_descriptor.packed,
 			palette,
-			indicies: &img.indicies,
+			image_blocks: &img.blocks,
 			blocks: &self.gif.blocks[starting_block..self.block_index],
 		})
 	}
@@ -117,7 +116,7 @@ pub struct Image<'a> {
 	pub top_offset: u16,
 	pub packed: ImagePacked,
 	pub palette: &'a Palette,
-	pub indicies: &'a [u8],
+	pub image_blocks: &'a [Vec<u8>],
 	pub blocks: &'a [Block],
 }
 
