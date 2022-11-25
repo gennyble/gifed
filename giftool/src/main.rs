@@ -1,7 +1,5 @@
 use std::{fs::File, ops::Deref, path::PathBuf};
 
-use gifed::{reader::GifReader, Gif};
-
 fn main() {
 	let subcommand = std::env::args().nth(1);
 

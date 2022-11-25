@@ -1,6 +1,6 @@
 use weezl::encode::Encoder;
 
-use crate::EncodeError;
+use crate::{reader::DecodeError, EncodeError};
 
 use super::{ImageDescriptor, Palette};
 
@@ -66,6 +66,7 @@ impl IndexedImage {
 	}
 }
 
+#[derive(Clone, Debug)]
 pub struct CompressedImage {
 	pub image_descriptor: ImageDescriptor,
 	pub local_color_table: Option<Palette>,
@@ -89,5 +90,26 @@ impl CompressedImage {
 		ret.push(0x00);
 
 		ret
+	}
+
+	pub fn decompress(self) -> Result<IndexedImage, DecodeError> {
+		let CompressedImage {
+			image_descriptor,
+			local_color_table,
+			lzw_code_size,
+			blocks,
+		} = self;
+
+		let data: Vec<u8> = blocks.into_iter().map(<_>::into_iter).flatten().collect();
+
+		//TODO: remove unwrap
+		let mut decompressor = weezl::decode::Decoder::new(weezl::BitOrder::Lsb, lzw_code_size);
+		let indicies = decompressor.decode(&data).unwrap();
+
+		Ok(IndexedImage {
+			image_descriptor,
+			local_color_table,
+			indicies,
+		})
 	}
 }
