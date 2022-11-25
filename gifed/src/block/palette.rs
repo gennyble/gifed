@@ -1,5 +1,5 @@
 pub use crate::Color;
-use crate::EncodingError;
+use crate::EncodeError;
 use std::{
 	convert::{TryFrom, TryInto},
 	ops::Deref,
@@ -91,11 +91,11 @@ impl TryFrom<&[u8]> for Palette {
 }
 
 impl TryFrom<Vec<Color>> for Palette {
-	type Error = EncodingError;
+	type Error = EncodeError;
 
 	fn try_from(value: Vec<Color>) -> Result<Self, Self::Error> {
 		if value.len() > 256 {
-			Err(EncodingError::TooManyColors)
+			Err(EncodeError::TooManyColors)
 		} else {
 			Ok(Self { table: value })
 		}
@@ -103,11 +103,11 @@ impl TryFrom<Vec<Color>> for Palette {
 }
 
 impl TryFrom<Vec<(u8, u8, u8)>> for Palette {
-	type Error = EncodingError;
+	type Error = EncodeError;
 
 	fn try_from(value: Vec<(u8, u8, u8)>) -> Result<Self, Self::Error> {
 		if value.len() > 256 {
-			Err(EncodingError::TooManyColors)
+			Err(EncodeError::TooManyColors)
 		} else {
 			Ok(Self {
 				table: value.into_iter().map(|c| c.into()).collect(),
