@@ -1,4 +1,4 @@
-use std::{convert::TryInto, fs::File, io::Write, path::Path, time::Duration};
+use std::{fs::File, io::Write, path::Path, time::Duration};
 
 use crate::{
 	block::{
@@ -7,9 +7,7 @@ use crate::{
 		packed::ImagePacked,
 		Block, Palette, ScreenDescriptor, Version,
 	},
-	reader::DecodeError,
 	writer::GifBuilder,
-	Color,
 };
 pub struct Gif {
 	pub header: Version,
@@ -23,7 +21,7 @@ impl Gif {
 		GifBuilder::new(width, height)
 	}
 
-	pub fn to_vec(&self) -> Vec<u8> {
+	pub fn as_bytes(&self) -> Vec<u8> {
 		let mut out = vec![];
 
 		out.extend_from_slice((&self.header).into());
@@ -52,7 +50,7 @@ impl Gif {
 	}
 
 	pub fn save<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
-		File::create(path.as_ref())?.write_all(&self.to_vec())
+		File::create(path.as_ref())?.write_all(&self.as_bytes())
 	}
 
 	pub fn images<'a>(&'a self) -> ImageIterator<'a> {
@@ -271,11 +269,12 @@ pub mod gif {
 			.image(
 				ImageBuilder::new(4, 4)
 					.palette(colortable.try_into().unwrap())
-					.indicies(&indicies),
+					.build(indicies.clone())
+					.unwrap(),
 			)
-			.image(ImageBuilder::new(4, 4).indicies(&indicies));
+			.image(ImageBuilder::new(4, 4).build(indicies).unwrap());
 
-		let bytes = actual.build().unwrap().to_vec();
+		let bytes = actual.build().unwrap().as_bytes();
 		assert_eq!(bytes, expected_out);
 	}
 
@@ -296,14 +295,15 @@ pub mod gif {
 			.image(
 				ImageBuilder::new(4, 4)
 					.palette(colortable.try_into().unwrap())
-					.indicies(&indicies)
 					.disposal_method(DisposalMethod::RestoreBackground)
-					.delay(64),
+					.delay(64)
+					.build(indicies.clone())
+					.unwrap(),
 			)
-			.image(ImageBuilder::new(4, 4).indicies(&indicies))
+			.image(ImageBuilder::new(4, 4).build(indicies).unwrap())
 			.build()
 			.unwrap()
-			.to_vec();
+			.as_bytes();
 
 		std::fs::File::create("ah.gif")
 			.unwrap()

@@ -4,7 +4,7 @@ use crate::{
 		packed::ImagePacked,
 		ImageDescriptor, IndexedImage, Palette, Version,
 	},
-	EncodingError,
+	EncodeError,
 };
 
 pub struct ImageBuilder {
@@ -98,20 +98,16 @@ impl ImageBuilder {
 		}
 	}
 
-	pub fn indicies(mut self, indicies: &[u8]) -> Self {
-		self.indicies = indicies.to_vec();
-		self
-	}
-
-	pub fn build(self) -> Result<IndexedImage, EncodingError> {
+	pub fn build(self, indicies: Vec<u8>) -> Result<BuiltImage, EncodeError> {
 		let expected_len = self.width as usize * self.height as usize;
-		if self.indicies.len() != expected_len {
-			return Err(EncodingError::IndicieSizeMismatch {
+		if indicies.len() != expected_len {
+			return Err(EncodeError::IndicieSizeMismatch {
 				expected: expected_len,
-				got: self.indicies.len(),
+				got: indicies.len(),
 			});
 		}
 
+		let gce = self.get_graphic_control();
 		let mut imgdesc = ImageDescriptor {
 			left: self.left_offset,
 			top: self.top_offset,
@@ -120,14 +116,19 @@ impl ImageBuilder {
 			packed: ImagePacked { raw: 0 }, // Set later
 		};
 
-		if let Some(lct) = &self.color_table {
-			imgdesc.set_color_table_metadata(Some(lct));
-		}
+		imgdesc.set_color_table_metadata(self.color_table.as_ref());
 
-		Ok(IndexedImage {
+		let image = IndexedImage {
 			image_descriptor: imgdesc,
 			local_color_table: self.color_table,
-			indicies: self.indicies,
-		})
+			indicies,
+		};
+
+		Ok(BuiltImage { image, gce })
 	}
+}
+
+pub struct BuiltImage {
+	pub image: IndexedImage,
+	pub gce: Option<GraphicControl>,
 }

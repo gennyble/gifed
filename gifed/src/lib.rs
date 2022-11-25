@@ -25,25 +25,24 @@ pub(crate) fn packed_to_color_table_length(packed: u8) -> usize {
 //bottom of page 24 in 89a
 
 #[derive(Clone, Copy, Debug)]
-pub enum EncodingError {
+pub enum EncodeError {
 	TooManyColors,
-	NoColorTable,
 	IndicieSizeMismatch { expected: usize, got: usize },
+	InvalidCodeSize { lzw_code_size: u8 },
 }
 
-impl fmt::Display for EncodingError {
+impl fmt::Display for EncodeError {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
 			Self::TooManyColors => write!(f, "A palette is limited to 256 colors"),
-			Self::NoColorTable => write!(
-				f,
-				"Refusing to set the background color index when no color table is set!"
-			),
 			Self::IndicieSizeMismatch { expected, got } => {
-				write!(f, "Expected to have {} indicies but got {}", expected, got)
+				write!(f, "Expected to have {expected} indicies but got {got}")
+			}
+			Self::InvalidCodeSize { lzw_code_size } => {
+				write!(f, "InvalidCodeSize => {lzw_code_size}")
 			}
 		}
 	}
 }
 
-impl Error for EncodingError {}
+impl Error for EncodeError {}

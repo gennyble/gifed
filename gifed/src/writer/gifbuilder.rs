@@ -1,9 +1,21 @@
-use std::convert::TryInto;
+use std::io::Write;
 
-use crate::block::packed::ScreenPacked;
-use crate::block::{Block, LoopCount, Palette, ScreenDescriptor, Version};
-use crate::writer::ImageBuilder;
-use crate::{EncodingError, Gif};
+use crate::{
+	block::{
+		packed::ScreenPacked, Block, CompressedImage, IndexedImage, Palette, ScreenDescriptor,
+		Version,
+	},
+	EncodeError, Gif,
+};
+
+use super::imagebuilder::BuiltImage;
+
+// We want to be able to gold [IndexedImage] as well as [CompressedImage],
+// but [Block] does not allow that, so
+enum BuildBlock {
+	Indexed(IndexedImage),
+	Block(Block),
+}
 
 pub struct GifBuilder {
 	version: Version,
@@ -11,8 +23,7 @@ pub struct GifBuilder {
 	height: u16,
 	background_color_index: u8,
 	global_color_table: Option<Palette>,
-	blocks: Vec<Block>,
-	error: Option<EncodingError>,
+	blocks: Vec<BuildBlock>,
 }
 
 impl GifBuilder {
@@ -24,7 +35,6 @@ impl GifBuilder {
 			background_color_index: 0,
 			global_color_table: None,
 			blocks: vec![],
-			error: None,
 		}
 	}
 
@@ -34,74 +44,85 @@ impl GifBuilder {
 	}
 
 	pub fn background_index(mut self, ind: u8) -> Self {
-		if self.error.is_some() {
-			return self;
-		}
-
-		if self.global_color_table.is_none() {
-			self.error = Some(EncodingError::NoColorTable);
-		} else {
-			self.background_color_index = ind;
-		}
+		self.background_color_index = ind;
 		self
 	}
 
-	pub fn image(mut self, ib: ImageBuilder) -> Self {
-		if self.error.is_some() {
-			return self;
-		}
+	pub fn image<I: Into<EncodeImage>>(mut self, img: I) -> Self {
+		match img.into() {
+			EncodeImage::CompressedImage(ci) => self
+				.blocks
+				.push(BuildBlock::Block(Block::CompressedImage(ci))),
+			EncodeImage::IndexedImage(ii) => self.blocks.push(BuildBlock::Indexed(ii)),
+			EncodeImage::BuiltImage(BuiltImage { image, gce }) => {
+				self.blocks.push(BuildBlock::Indexed(image));
 
-		if ib.required_version() == Version::Gif89a {
-			self.version = Version::Gif89a;
-		}
+				if let Some(gce) = gce {
+					self.version = Version::Gif89a;
 
-		if let Some(gce) = ib.get_graphic_control() {
-			self.blocks.push(Block::GraphicControlExtension(gce));
+					self.blocks
+						.push(BuildBlock::Block(Block::GraphicControlExtension(gce)));
+				}
+			}
 		}
-
-		//FIXME
-		/*
-		match ib.build() {
-			Ok(image) => self.blocks.push(Block::IndexedImage(image)),
-			Err(e) => self.error = Some(e),
-		}*/
 
 		self
 	}
 
-	/*pub fn extension(mut self, ext: Extension) -> Self {
-		self.blocks.push(Block::Extension(ext));
-		self
-	}*/
-
-	pub fn repeat(mut self, count: LoopCount) -> Self {
-		self.blocks.push(Block::LoopingExtension(count));
-		self
-	}
-
-	pub fn build(self) -> Result<Gif, EncodingError> {
-		if let Some(error) = self.error {
-			return Err(error);
-		}
-
-		let mut lsd = ScreenDescriptor {
+	pub fn build(self) -> Result<Gif, EncodeError> {
+		let mut screen_descriptor = ScreenDescriptor {
 			width: self.width,
 			height: self.height,
 			packed: ScreenPacked { raw: 0 }, // Set later
 			background_color_index: self.background_color_index,
-			pixel_aspect_ratio: 0, //TODO: Allow configuring
+			pixel_aspect_ratio: 0, //TODO
 		};
 
-		if let Some(gct) = &self.global_color_table {
-			println!("build {}", gct.len());
-			lsd.set_color_table_metadata(Some(gct));
+		screen_descriptor.set_color_table_metadata(self.global_color_table.as_ref());
+
+		let mut gif = Gif {
+			header: self.version,
+			screen_descriptor,
+			global_color_table: self.global_color_table,
+			blocks: vec![],
+		};
+
+		let lzw_gct_size = gif.global_color_table.as_ref().map(|ct| ct.packed_len());
+
+		for block in self.blocks {
+			match block {
+				BuildBlock::Indexed(indexed) => {
+					let compressed = indexed.compress(lzw_gct_size)?;
+					gif.blocks.push(Block::CompressedImage(compressed));
+				}
+				BuildBlock::Block(block) => gif.blocks.push(block),
+			}
 		}
 
-		Ok(Gif {
-			header: self.version,
-			screen_descriptor: lsd,
-			global_color_table: self.global_color_table,
-			blocks: self.blocks,
-		})
+		Ok(gif)
+	}
+}
+
+pub enum EncodeImage {
+	CompressedImage(CompressedImage),
+	IndexedImage(IndexedImage),
+	BuiltImage(BuiltImage),
+}
+
+impl From<CompressedImage> for EncodeImage {
+	fn from(ci: CompressedImage) -> Self {
+		EncodeImage::CompressedImage(ci)
+	}
+}
+
+impl From<IndexedImage> for EncodeImage {
+	fn from(ii: IndexedImage) -> Self {
+		EncodeImage::IndexedImage(ii)
+	}
+}
+
+impl From<BuiltImage> for EncodeImage {
+	fn from(bi: BuiltImage) -> Self {
+		EncodeImage::BuiltImage(bi)
 	}
 }

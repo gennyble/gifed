@@ -1,7 +1,8 @@
 use weezl::encode::Encoder;
 
+use crate::EncodeError;
+
 use super::{ImageDescriptor, Palette};
-use crate::writer::EncodeError;
 
 #[derive(Clone, Debug)]
 pub struct IndexedImage {
@@ -33,11 +34,11 @@ impl IndexedImage {
 	/// must also be at least 2.
 	pub fn compress(self, lzw_code_size: Option<u8>) -> Result<CompressedImage, EncodeError> {
 		//TODO: gen- The old code had a +1 here. Why?
-		let mcs = match lzw_code_size {
-			Some(mcs) => mcs,
-			None => match self.local_color_table.as_ref() {
+		let mcs = match self.local_color_table.as_ref() {
+			Some(palette) => palette.packed_len(),
+			None => match lzw_code_size {
 				None => return Err(EncodeError::InvalidCodeSize { lzw_code_size: 0 }),
-				Some(lct) => lct.packed_len(),
+				Some(mcs) => mcs,
 			},
 		};
 
