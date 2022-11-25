@@ -68,7 +68,6 @@ fn main() {
 				let dispose_string = if let Some(dispose) = gce.disposal_method() {
 					dispose.to_string()
 				} else {
-					String::from("Reserved Value!");
 					format!("Reserved: {:b}", gce.packed().disposal_method())
 				};
 
@@ -83,7 +82,10 @@ fn main() {
 			}
 			Block::LoopingExtension(_) => todo!(),
 			Block::CommentExtension(cmt) => {
-				println!("Comment Extension\n\tLength {}", cmt.len().yellow());
+				print!("Comment Extension");
+				print_offset(offset);
+
+				println!("\tLength {}", cmt.len().yellow());
 
 				match String::from_utf8(cmt) {
 					Ok(cmt) => println!("\tString \"{}\"", cmt.yellow()),
@@ -94,8 +96,11 @@ fn main() {
 				let auth = app.authentication_code();
 				let app_ident = String::from_utf8_lossy(app.identifier());
 
+				print!("Application Extension");
+				print_offset(offset);
+
 				println!(
-					"Application Extension\n\tIdentifier {}\n\tAuthentication {:02X} {:02X} {:02X}",
+					"\tIdentifier {}\n\tAuthentication {:02X} {:02X} {:02X}",
 					app_ident.yellow(),
 					auth[0].yellow(),
 					auth[1].yellow(),
@@ -170,7 +175,7 @@ fn print_offset(offset: Range<usize>) {
 	print_usize(offset.start);
 	print!(" … ");
 	print_usize(offset.end);
-	println!("]");
+	println!("] ");
 }
 
 fn print_usize(offset: usize) {
