@@ -48,6 +48,11 @@ impl GifBuilder {
 		self
 	}
 
+	pub fn block(mut self, block: Block) -> Self {
+		self.blocks.push(BuildBlock::Block(block));
+		self
+	}
+
 	pub fn repeat(mut self, count: LoopCount) -> Self {
 		self.blocks
 			.push(BuildBlock::Block(Block::LoopingExtension(count)));
