@@ -2,6 +2,7 @@ use std::convert::TryInto;
 
 use super::{packed::ImagePacked, Palette};
 
+#[derive(Clone, Debug)]
 pub struct ImageDescriptor {
 	pub left: u16,
 	pub top: u16,
@@ -32,20 +33,18 @@ impl ImageDescriptor {
 	pub fn color_table_size(&self) -> usize {
 		crate::packed_to_color_table_length(self.packed.color_table_size())
 	}
-}
 
-impl From<&ImageDescriptor> for Box<[u8]> {
-	fn from(desc: &ImageDescriptor) -> Self {
+	pub fn as_bytes(&self) -> Vec<u8> {
 		let mut vec = vec![];
 
 		vec.push(0x2C); // Image Seperator
-		vec.extend_from_slice(&desc.left.to_le_bytes());
-		vec.extend_from_slice(&desc.top.to_le_bytes());
-		vec.extend_from_slice(&desc.width.to_le_bytes());
-		vec.extend_from_slice(&desc.height.to_le_bytes());
-		vec.push(desc.packed.raw);
+		vec.extend_from_slice(&self.left.to_le_bytes());
+		vec.extend_from_slice(&self.top.to_le_bytes());
+		vec.extend_from_slice(&self.width.to_le_bytes());
+		vec.extend_from_slice(&self.height.to_le_bytes());
+		vec.push(self.packed.raw);
 
-		vec.into_boxed_slice()
+		vec
 	}
 }
 
@@ -66,5 +65,3 @@ impl From<[u8; 9]> for ImageDescriptor {
 		}
 	}
 }
-
-//TODO: Impl to allow changing the packed field easier
