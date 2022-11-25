@@ -2,12 +2,12 @@ use std::convert::TryFrom;
 
 use weezl::encode::Encoder;
 
-use super::{ColorTable, ImageDescriptor};
+use super::{ImageDescriptor, Palette};
 use crate::LZW;
 
 pub struct IndexedImage {
 	pub image_descriptor: ImageDescriptor,
-	pub local_color_table: Option<ColorTable>,
+	pub local_color_table: Option<Palette>,
 	pub indicies: Vec<u8>,
 }
 
@@ -36,8 +36,7 @@ impl IndexedImage {
 
 		// Get the mcs while we write out the color table
 		let mut mcs = if let Some(lct) = &self.local_color_table {
-			boxed = lct.into();
-			out.extend_from_slice(&*boxed);
+			out.extend_from_slice(&lct.as_bytes());
 
 			lct.packed_len() + 1
 		} else {
@@ -70,7 +69,7 @@ impl IndexedImage {
 
 pub struct CompressedImage {
 	pub image_descriptor: ImageDescriptor,
-	pub local_color_table: Option<ColorTable>,
+	pub local_color_table: Option<Palette>,
 	pub lzw_minimum_code_size: u8,
 	pub blocks: Vec<Vec<u8>>,
 }

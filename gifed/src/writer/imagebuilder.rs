@@ -2,7 +2,7 @@ use crate::{
 	block::{
 		extension::{DisposalMethod, GraphicControl},
 		packed::ImagePacked,
-		ColorTable, ImageDescriptor, IndexedImage, Version,
+		ImageDescriptor, IndexedImage, Palette, Version,
 	},
 	EncodingError,
 };
@@ -12,7 +12,7 @@ pub struct ImageBuilder {
 	top_offset: u16,
 	width: u16,
 	height: u16,
-	color_table: Option<ColorTable>,
+	color_table: Option<Palette>,
 
 	delay: u16,
 	disposal_method: DisposalMethod,
@@ -42,7 +42,7 @@ impl ImageBuilder {
 		self
 	}
 
-	pub fn palette(mut self, table: ColorTable) -> Self {
+	pub fn palette(mut self, table: Palette) -> Self {
 		self.color_table = Some(table);
 		self
 	}

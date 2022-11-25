@@ -3,7 +3,7 @@ use std::{
 	ops::{Deref, DerefMut, Index},
 };
 
-use crate::{block::ColorTable, color::Rgb, gif::Image, reader::DecodingError, Color};
+use crate::{block::Palette, color::Rgb, gif::Image, reader::DecodingError, Color};
 
 /// An RGBA, full color image
 pub struct RgbaImage {
@@ -21,7 +21,7 @@ impl RgbaImage {
 		top: u16,
 		left: u16,
 		indicies: &[u8],
-		table: &ColorTable,
+		table: &Palette,
 		transindex: Option<u8>,
 	) -> Result<Self, DecodingError> {
 		let mut data = vec![0; width as usize * height as usize * 4];

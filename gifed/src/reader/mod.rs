@@ -11,8 +11,7 @@ use std::{
 use crate::{
 	block::{
 		extension::{Application, GraphicControl},
-		Block, ColorTable, CompressedImage, ImageDescriptor, IndexedImage, ScreenDescriptor,
-		Version,
+		Block, CompressedImage, ImageDescriptor, IndexedImage, Palette, ScreenDescriptor, Version,
 	},
 	color, Gif,
 };
@@ -65,16 +64,13 @@ impl GifReader {
 		})
 	}
 
-	fn read_color_table(
-		reader: &mut SmartReader,
-		size: usize,
-	) -> Result<ColorTable, DecodingError> {
+	fn read_color_table(reader: &mut SmartReader, size: usize) -> Result<Palette, DecodingError> {
 		let buffer = reader
 			.take(size as usize)
 			.ok_or(DecodingError::UnexpectedEof)?;
 
 		// We get the size from the screen descriptor. This should never return Err
-		Ok(ColorTable::try_from(&buffer[..]).unwrap())
+		Ok(Palette::try_from(&buffer[..]).unwrap())
 	}
 
 	fn read_block(reader: &mut SmartReader) -> Result<Option<Block>, DecodingError> {

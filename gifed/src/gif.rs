@@ -1,11 +1,11 @@
-use std::{convert::TryInto, fs::File, io::Write, iter::Peekable, path::Path, time::Duration};
+use std::{convert::TryInto, fs::File, io::Write, path::Path, time::Duration};
 
 use crate::{
 	block::{
 		encode_block,
 		extension::{DisposalMethod, GraphicControl},
 		packed::ImagePacked,
-		Block, ColorTable, ScreenDescriptor, Version,
+		Block, Palette, ScreenDescriptor, Version,
 	},
 	colorimage::{RgbImage, RgbaImage},
 	reader::DecodingError,
@@ -15,7 +15,7 @@ use crate::{
 pub struct Gif {
 	pub header: Version,
 	pub screen_descriptor: ScreenDescriptor,
-	pub global_color_table: Option<ColorTable>,
+	pub global_color_table: Option<Palette>,
 	pub blocks: Vec<Block>, // Trailer at the end of this struct is 0x3B //
 }
 
@@ -35,8 +35,7 @@ impl Gif {
 		// While we output the color table, grab it's length to use when
 		// outputting the image, or 0 if we don't have a GCT
 		let mcs = if let Some(gct) = &self.global_color_table {
-			boxed = gct.into();
-			out.extend_from_slice(&*boxed);
+			out.extend_from_slice(&gct.as_bytes());
 
 			gct.packed_len()
 		} else {
@@ -128,7 +127,7 @@ pub struct Image<'a> {
 	pub left_offset: u16,
 	pub top_offset: u16,
 	pub packed: ImagePacked,
-	pub palette: &'a ColorTable,
+	pub palette: &'a Palette,
 	pub indicies: &'a [u8],
 	pub blocks: &'a [Block],
 }
