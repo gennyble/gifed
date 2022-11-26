@@ -43,6 +43,18 @@ impl ScreenDescriptor {
 		crate::packed_to_color_table_length(self.packed.color_table_size())
 	}
 
+	/// Returns the background color index. Defaults to zero.
+	pub fn background_color(&self) -> u8 {
+		self.background_color_index
+	}
+
+	/// Set the color used to fill the space in the gif's canvas that no image
+	/// has occupied yet. If there is no palette associated with this
+	/// Screen Descriptor, this value should be ignored by the decoder.
+	pub fn set_background_color(&mut self, index: u8) {
+		self.background_color_index = index;
+	}
+
 	pub fn as_bytes(&self) -> Vec<u8> {
 		let mut vec = vec![];
 		vec.extend_from_slice(&self.width.to_le_bytes());
