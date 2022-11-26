@@ -41,8 +41,5 @@ These are part of the 89a spec, but are kept separate as they're not "core" to t
 ## gifprobe
 Similar to FFMPEG's ffprobe, gifprobe will print details of a gif to stdout.
 
-## giftool
-A CLI tool for modifying gif files.
-
 # License
 gifed, gifprobe, and giftool are licensed under Creative Commons Zero 1.0; they're in the public domain. Attribution is appreciated, but not required.
