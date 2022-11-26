@@ -12,7 +12,7 @@ This crate is still pretty rough. I hope to make it feature complete and intuiti
 - [ ] Reader
 - [x] Streaming Reader
 - [x] Writer
-- [ ] Streaming Writer
+- [x] Streaming Writer
 - [ ] Feature to allow using the [weezl][weezl-crates] crate for LZW compression instead of the built-in
 - [ ] Feature to allow using the [rgb][rgb-crates] crate for the color type.
 - [ ] Well written and easy to understand docs! `bitvec` quality, but who can match that?
@@ -37,6 +37,9 @@ These are part of the 89a spec, but are kept separate as they're not "core" to t
 [gif87a]: https://www.w3.org/Graphics/GIF/spec-gif87.txt
 [gif89a]: https://www.w3.org/Graphics/GIF/spec-gif89a.txt
 [netscape]: http://www.vurdalakov.net/misc/gif/netscape-looping-application-extension
+
+## gif-frames
+GIF Frames helps you manage the weird disposal methods that the Graphic Control Extension introduced. Also provides Indexed -> Rgb/Rgba conversion.
 
 ## gifprobe
 Similar to FFMPEG's ffprobe, gifprobe will print details of a gif to stdout.

@@ -6,8 +6,8 @@ pub mod block;
 pub mod reader;
 pub mod writer;
 
-use core::fmt;
-use std::error::Error;
+pub use reader::DecodeError;
+pub use writer::EncodeError;
 
 pub use color::Color;
 pub use gif::{Gif, Image};
@@ -23,26 +23,3 @@ pub(crate) fn packed_to_color_table_length(packed: u8) -> usize {
 //in 87a aren't set if version is 87a, or that we return a warning, etc. Just
 //remember about this.
 //bottom of page 24 in 89a
-
-#[derive(Clone, Copy, Debug)]
-pub enum EncodeError {
-	TooManyColors,
-	IndicieSizeMismatch { expected: usize, got: usize },
-	InvalidCodeSize { lzw_code_size: u8 },
-}
-
-impl fmt::Display for EncodeError {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			Self::TooManyColors => write!(f, "A palette is limited to 256 colors"),
-			Self::IndicieSizeMismatch { expected, got } => {
-				write!(f, "Expected to have {expected} indicies but got {got}")
-			}
-			Self::InvalidCodeSize { lzw_code_size } => {
-				write!(f, "InvalidCodeSize => {lzw_code_size}")
-			}
-		}
-	}
-}
-
-impl Error for EncodeError {}

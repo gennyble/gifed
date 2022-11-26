@@ -66,14 +66,14 @@ impl GifBuilder {
 				.push(BuildBlock::Block(Block::CompressedImage(ci))),
 			EncodeImage::IndexedImage(ii) => self.blocks.push(BuildBlock::Indexed(ii)),
 			EncodeImage::BuiltImage(BuiltImage { image, gce }) => {
-				self.blocks.push(BuildBlock::Indexed(image));
-
 				if let Some(gce) = gce {
 					self.version = Version::Gif89a;
 
 					self.blocks
 						.push(BuildBlock::Block(Block::GraphicControlExtension(gce)));
 				}
+
+				self.blocks.push(BuildBlock::Indexed(image));
 			}
 		}
 
