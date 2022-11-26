@@ -38,9 +38,6 @@ These are part of the 89a spec, but are kept separate as they're not "core" to t
 [gif89a]: https://www.w3.org/Graphics/GIF/spec-gif89a.txt
 [netscape]: http://www.vurdalakov.net/misc/gif/netscape-looping-application-extension
 
-## gif-frames
-GIF Frames helps you manage the weird disposal methods that the Graphic Control Extension introduced. Also provides Indexed -> Rgb/Rgba conversion.
-
 ## gifprobe
 Similar to FFMPEG's ffprobe, gifprobe will print details of a gif to stdout.
 
