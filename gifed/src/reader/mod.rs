@@ -8,9 +8,12 @@ use std::{
 	path::Path,
 };
 
-use crate::block::{
-	extension::{Application, GraphicControl},
-	Block, CompressedImage, ImageDescriptor, Palette, ScreenDescriptor, Version,
+use crate::{
+	block::{
+		extension::{Application, GraphicControl},
+		Block, CompressedImage, ImageDescriptor, Palette, ScreenDescriptor, Version,
+	},
+	Gif,
 };
 
 pub struct Decoder<R: Read> {
@@ -51,6 +54,25 @@ impl<R: Read> Decoder<R> {
 			palette,
 			reader: self.reader,
 			saw_trailer: false,
+		})
+	}
+
+	pub fn read_all(self) -> Result<Gif, DecodeError> {
+		let mut decoder = self.read()?;
+
+		let mut blocks = vec![];
+		loop {
+			match decoder.block()? {
+				Some(block) => blocks.push(block.block),
+				None => break,
+			}
+		}
+
+		Ok(Gif {
+			header: decoder.version,
+			screen_descriptor: decoder.screen_descriptor,
+			global_color_table: decoder.palette,
+			blocks,
 		})
 	}
 
