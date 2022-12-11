@@ -49,14 +49,13 @@ the decoder may use an initial segment of the table to render the
 graphic.
 
 Values:  
-0 - Not ordered.
+0 - Not ordered.  
 1 - Ordered by decreasing importance, most important color first.
 
 ##### Size of Global Color Table
 The value in this field is used to calculate the number
 of bytes contained in the Global Color Table. To determine that
-actual size of the color table, raise 2 to [the value of the field
-+ 1]. (This field is made up of the 3 least significant bits of the byte.)
+actual size of the color table, raise 2 to [the value of the field + 1]. (This field is made up of the 3 least significant bits of the byte.)
 
 #### Background Color Index
 Index into the Global Color Table for
