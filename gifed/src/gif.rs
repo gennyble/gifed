@@ -5,7 +5,7 @@ use crate::{
 		encode_block,
 		extension::{DisposalMethod, GraphicControl},
 		packed::ImagePacked,
-		Block, Palette, ScreenDescriptor, Version,
+		Block, CompressedImage, ImageDescriptor, IndexedImage, Palette, ScreenDescriptor, Version,
 	},
 	writer::GifBuilder,
 };
@@ -81,36 +81,37 @@ impl<'a> Iterator for ImageIterator<'a> {
 			self.block_index += 1;
 		};
 
-		let palette = img
-			.local_color_table
-			.as_ref()
-			.unwrap_or(self.gif.global_color_table.as_ref().unwrap());
-
 		Some(Image {
-			width: img.image_descriptor.width,
-			height: img.image_descriptor.height,
-			left_offset: img.image_descriptor.left,
-			top_offset: img.image_descriptor.top,
-			packed: img.image_descriptor.packed,
-			palette,
-			image_blocks: &img.blocks,
+			compressed: &img,
+			global_palette: self.gif.global_color_table.as_ref(),
 			blocks: &self.gif.blocks[starting_block..self.block_index],
 		})
 	}
 }
 
 pub struct Image<'a> {
-	pub width: u16,
-	pub height: u16,
-	pub left_offset: u16,
-	pub top_offset: u16,
-	pub packed: ImagePacked,
-	pub palette: &'a Palette,
-	pub image_blocks: &'a [Vec<u8>],
+	pub compressed: &'a CompressedImage,
+	pub global_palette: Option<&'a Palette>,
 	pub blocks: &'a [Block],
 }
 
 impl<'a> Image<'a> {
+	pub fn width(&self) -> u16 {
+		self.compressed.image_descriptor.width
+	}
+
+	pub fn height(&self) -> u16 {
+		self.compressed.image_descriptor.height
+	}
+
+	pub fn top(&self) -> u16 {
+		self.compressed.image_descriptor.top
+	}
+
+	pub fn left(&self) -> u16 {
+		self.compressed.image_descriptor.left
+	}
+
 	pub fn graphic_control(&self) -> Option<&GraphicControl> {
 		for block in self.blocks {
 			if let Block::GraphicControlExtension(gce) = block {
@@ -151,11 +152,21 @@ impl<'a> Image<'a> {
 		}
 	}
 
-	pub fn png_trns(&self) -> Option<Vec<u8>> {
-		if let Some(trans_idx) = self.transparent_index() {
-			let mut trns = Vec::with_capacity(self.palette.len());
+	pub fn palette(&self) -> &Palette {
+		if let Some(plt) = self.compressed.local_color_table.as_ref() {
+			plt
+		} else {
+			//FIXME: Maybe don't panic here
+			self.global_palette.unwrap()
+		}
+	}
 
-			for idx in 0..self.palette.len() as u8 {
+	pub fn png_trns(&self) -> Option<Vec<u8>> {
+		let palette = self.palette();
+		if let Some(trans_idx) = self.transparent_index() {
+			let mut trns = Vec::with_capacity(palette.len());
+
+			for idx in 0..palette.len() as u8 {
 				if idx == trans_idx {
 					trns.push(0u8);
 				} else {
@@ -167,6 +178,12 @@ impl<'a> Image<'a> {
 		}
 
 		None
+	}
+
+	/// Clones the CompressedImage and decompresses it.
+	pub fn decompess(&self) -> IndexedImage {
+		//FIXME: unwrap
+		self.compressed.clone().decompress().unwrap()
 	}
 }
 

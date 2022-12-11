@@ -1,11 +1,12 @@
 # Recolor Extension DRAFT
-
-I want to assume that if the decoder does not know the type of an extension, IE the extension label does not match with graphic control/comment/plain text/application, that it will silently ignore it. The decoder can always know the size, so it seems plausbile. But I cannot find any indication of so in the spec for 87a or 89a.
+An extension to replace the currently active global colour table. There is no limit on how many may appear in a data stream.
 
 ## Extension Scope
 The scope of this extension is every block following this one.
 
 ## Extension Type
+I want to assume that if the decoder does not know the type of an extension, IE the extension label does not match with graphic control/comment/plain text/application, that it will silently ignore it. The decoder can always know the size, so it seems plausbile. But I cannot find any indication of so in the spec for 87a or 89a.
+
 ### Regular Extension
 In the case where we determine that we don't need to "wrap" it in an application extension this extension's label shall be `0xF8`. This positions it directly below the Graphic Control Extension, `0xF9`.
 
