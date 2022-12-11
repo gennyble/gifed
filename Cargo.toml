@@ -2,6 +2,5 @@
 members = [
 	"gifed",
 	"gif-frames",
-	"gifprobe",
-	"giftool"
+	"gifprobe"
 ]
