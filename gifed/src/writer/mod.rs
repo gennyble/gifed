@@ -25,7 +25,9 @@ impl<W: Write> Writer<W> {
 		height: u16,
 		global_palette: Option<Palette>,
 	) -> Result<Self, EncodeError> {
-		let screen_descriptor = ScreenDescriptor::new(width, height);
+		let mut screen_descriptor = ScreenDescriptor::new(width, height);
+		screen_descriptor.set_color_table_metadata(global_palette.as_ref());
+
 		Self::from_parts(writer, Version::Gif89a, screen_descriptor, global_palette)
 	}
 
