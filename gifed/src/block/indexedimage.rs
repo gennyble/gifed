@@ -46,6 +46,8 @@ impl IndexedImage {
 			},
 		};
 
+		let mcs = if mcs < 2 { 2 } else { mcs };
+
 		//FIXME: gen- This seems  broken
 		//let compressed = LZW::encode(mcs, &self.indicies);
 		let compressed = Encoder::new(weezl::BitOrder::Lsb, mcs)
