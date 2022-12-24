@@ -10,7 +10,7 @@ pub struct GraphicControl {
 }
 
 impl GraphicControl {
-	pub(crate) fn new(
+	pub fn new(
 		disposal_method: DisposalMethod,
 		user_input_flag: bool,
 		transparency_flag: bool,
