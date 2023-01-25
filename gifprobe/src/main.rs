@@ -17,6 +17,15 @@ fn main() {
 		return;
 	};
 
+	let expand = match std::env::args().nth(2).as_deref() {
+		Some("expand") => true,
+		None => false,
+		Some(str) => {
+			eprintln!("{str} is not recognised. Did you mean 'expand'?");
+			return;
+		}
+	};
+
 	let decoder = Decoder::file(&file).unwrap();
 	let mut reader = decoder.read().unwrap();
 
@@ -87,9 +96,23 @@ fn main() {
 
 				println!("\tLength {}", cmt.len().yellow());
 
-				match String::from_utf8(cmt) {
+				match String::from_utf8(cmt.clone()) {
 					Ok(cmt) => println!("\tString \"{}\"", cmt.yellow()),
-					Err(_) => println!("\tString {}", "Content is not utf8".red()),
+					Err(_) => {
+						if !expand {
+							println!("\tString {}", "Content is not utf8".red())
+						} else {
+							let lossy = String::from_utf8_lossy(&cmt);
+							if lossy.len() > 0 {
+								println!("\tString (lossy) \"{}\"", lossy.yellow())
+							} else {
+								println!(
+									"\tString (lossy) \"{}\"",
+									"Could not parse as UTF8 Lossy".red()
+								);
+							}
+						}
+					}
 				}
 			}
 			Block::ApplicationExtension(app) => {
@@ -120,10 +143,16 @@ fn main() {
 					let data = app.data();
 
 					match String::from_utf8(data.to_vec()) {
-						Ok(s) => println!(
-							"\tData {}",
-							format!("Valid UTF-8, {} bytes", s.len()).yellow()
-						),
+						Ok(s) => {
+							println!(
+								"\tData {}",
+								format!("Valid UTF-8, {} bytes", s.len()).yellow()
+							);
+
+							if expand {
+								println!("\tString \"{}\"", s.yellow());
+							}
+						}
 						Err(_e) => println!(
 							"\tData {}",
 							format!("Invalid UTF-8, {} bytes", data.len()).yellow()
