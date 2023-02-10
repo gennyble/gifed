@@ -41,5 +41,8 @@ These are part of the 89a spec, but are kept separate as they're not "core" to t
 ## gifprobe
 Similar to FFMPEG's ffprobe, gifprobe will print details of a gif to stdout.
 
+## gaudio
+Nothing valued is here. Inject/Retrieve MP3 files from GiFs. I'd like to eventually play them right outta the thing, right, but that's a lot harder.
+
 # License
-gifed, gifprobe, and giftool are licensed under Creative Commons Zero 1.0; they're in the public domain. Attribution is appreciated, but not required.
+gifed, gifprobe, and gaudio are licensed under Creative Commons Zero 1.0; they're in the public domain. Attribution is appreciated, but not required.
