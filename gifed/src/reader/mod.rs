@@ -109,6 +109,14 @@ pub struct Reader<R: Read> {
 }
 
 impl<R: Read> Reader<R> {
+	pub fn width(&self) -> u16 {
+		self.screen_descriptor.width
+	}
+
+	pub fn height(&self) -> u16 {
+		self.screen_descriptor.height
+	}
+
 	pub fn block(&mut self) -> Result<Option<ReadBlock>, DecodeError> {
 		if self.saw_trailer {
 			return Ok(None);
