@@ -4,8 +4,7 @@ use crate::{
 	block::{
 		encode_block,
 		extension::{DisposalMethod, GraphicControl},
-		packed::ImagePacked,
-		Block, CompressedImage, ImageDescriptor, IndexedImage, Palette, ScreenDescriptor, Version,
+		Block, CompressedImage, IndexedImage, Palette, ScreenDescriptor, Version,
 	},
 	writer::GifBuilder,
 };
