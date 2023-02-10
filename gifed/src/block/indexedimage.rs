@@ -28,6 +28,10 @@ impl IndexedImage {
 		self.image_descriptor.height
 	}
 
+	pub fn palette(&self) -> Option<&Palette> {
+		self.local_color_table.as_ref()
+	}
+
 	/// The `lzw_code_size` should be None if there is a local color table present. If
 	/// this image is using the Global Color Table, you must provide an
 	/// LZW Minimum Code Size here. It is equal to the value of [Palette::packed_len], but
@@ -77,6 +81,26 @@ pub struct CompressedImage {
 }
 
 impl CompressedImage {
+	pub fn left(&self) -> u16 {
+		self.image_descriptor.left
+	}
+
+	pub fn top(&self) -> u16 {
+		self.image_descriptor.left
+	}
+
+	pub fn width(&self) -> u16 {
+		self.image_descriptor.width
+	}
+
+	pub fn height(&self) -> u16 {
+		self.image_descriptor.height
+	}
+
+	pub fn palette(&self) -> Option<&Palette> {
+		self.local_color_table.as_ref()
+	}
+
 	pub fn as_bytes(&self) -> Vec<u8> {
 		let mut ret = vec![];
 
