@@ -17,8 +17,6 @@ pub struct ImageBuilder {
 	delay: u16,
 	disposal_method: DisposalMethod,
 	transparent_index: Option<u8>,
-
-	indicies: Vec<u8>,
 }
 
 impl ImageBuilder {
@@ -32,7 +30,6 @@ impl ImageBuilder {
 			delay: 0,
 			disposal_method: DisposalMethod::NoAction,
 			transparent_index: None,
-			indicies: vec![],
 		}
 	}
 

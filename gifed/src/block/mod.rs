@@ -13,8 +13,6 @@ pub use palette::Palette;
 pub use screendescriptor::ScreenDescriptor;
 pub use version::Version;
 
-use crate::writer::ImageBuilder;
-
 use self::extension::Application;
 use self::extension::GraphicControl;
 
@@ -26,11 +24,6 @@ pub enum Block {
 	//TODO: PlainTextExtension(PlainTextExtension),
 	ApplicationExtension(Application),
 	LoopingExtension(LoopCount),
-}
-
-enum WriteBlock {
-	ImageBuilder(ImageBuilder),
-	Block(Block),
 }
 
 pub enum LoopCount {

@@ -3,7 +3,7 @@ use std::fs::File;
 use gifed::{
 	block::{LoopCount, Palette},
 	writer::{ImageBuilder, Writer},
-	Color, EncodeError, Gif,
+	Color, EncodeError,
 };
 
 fn main() -> Result<(), EncodeError> {

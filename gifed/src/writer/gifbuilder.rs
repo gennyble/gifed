@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use crate::{
 	block::{
 		packed::ScreenPacked, Block, CompressedImage, IndexedImage, LoopCount, Palette,

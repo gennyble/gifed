@@ -4,10 +4,6 @@ pub struct GraphicPacked {
 }
 
 impl GraphicPacked {
-	pub(crate) fn new(packed: u8) -> Self {
-		Self { raw: packed }
-	}
-
 	pub fn reserved(&self) -> u8 {
 		self.raw & 0b111_000_0_0 >> 5
 	}
@@ -59,10 +55,6 @@ pub struct ImagePacked {
 }
 
 impl ImagePacked {
-	pub(crate) fn new(packed: u8) -> Self {
-		Self { raw: packed }
-	}
-
 	pub fn color_table(&self) -> bool {
 		self.raw & 0b1_0_0_00_000 > 0
 	}
