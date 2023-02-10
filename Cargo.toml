@@ -1,6 +1,6 @@
 [workspace]
 members = [
 	"gifed",
-	"gif-frames",
-	"gifprobe"
+	"gifprobe",
+	"gaudio"
 ]

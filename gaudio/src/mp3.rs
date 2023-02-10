@@ -76,6 +76,8 @@ pub struct Frame {
 }
 
 pub struct Header {
+	// I only want to parse what i need, but we need this for writing out, so
+	raw: [u8; 4],
 	version: Version,
 	layer: Layer,
 	crc: bool,
@@ -92,6 +94,10 @@ impl Header {
 		let crc = raw[1] & 1 == 0;
 
 		let bitrate = Bitrate::resolve(raw[2], version, layer);
+
+		//TODO: gen- love, you were trying to get the size of the data field. We need
+		//to know the sampling rate and the pad bit for that, which happen to be the
+		//next three bits.
 
 		todo!()
 	}
