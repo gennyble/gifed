@@ -1,0 +1,14 @@
+[package]
+name = "slugs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+camino = "1.1.2"
+gifed = { path = "../gifed" }
+png = "0.17.7"
+tepimg = { git = "https://github.com/gennyble/tep" }
+thiserror = "1.0.38"
+colorsquash = { path = "../../colorsquash" }

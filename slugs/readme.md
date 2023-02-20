@@ -23,3 +23,12 @@ Frame frame2.tep
 	Delay 2
 Frame frame3.tep
 ```
+
+```kdl
+gif width=16 height=16 delay=4 {
+	palette "palette"
+	image "frame1.tep"
+	image "frame2.tep" delay=2
+	image "frame3.tep"
+}
+```

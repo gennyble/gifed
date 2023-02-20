@@ -2,5 +2,6 @@
 members = [
 	"gifed",
 	"gifprobe",
-	"gaudio"
+	"gaudio",
+	"slugs"
 ]
