@@ -15,6 +15,7 @@ impl Palette {
 		Self { table: vec![] }
 	}
 
+	//FIXME: gen- Second paragraph is incorrect
 	/// Returns the number of colors in the color table as used by the packed
 	/// fields in the Logical Screen Descriptor and Image Descriptor. You can
 	/// get the actual size with the [`len`](struct.ColorTable.html#method.len) method.
@@ -29,9 +30,15 @@ impl Palette {
 		self.packed_len() + 1
 	}
 
-	/// Returns the number of items in the table
+	/// Returns the number of colours in the pallette
 	pub fn len(&self) -> usize {
 		self.table.len()
+	}
+
+	/// Returns the number of items that the decoder *thinks* is in the palette.
+	/// This is 2^(n + 1) where n = [Palette::packed_len]
+	pub fn computed_len(&self) -> usize {
+		2usize.pow(self.packed_len() as u32 + 1)
 	}
 
 	/// Pushes a color on to the end of the table
@@ -50,6 +57,14 @@ impl Palette {
 			}
 		}
 		None
+	}
+
+	/// How many padding bytes we need to write.
+	/// We need to pad the colour table because the size must be a power of two.
+	//TODO: gen- better docs
+	pub fn padding(&self) -> usize {
+		let comp = self.computed_len();
+		(comp as usize - self.len()) * 3
 	}
 
 	pub fn as_bytes(&self) -> Vec<u8> {
