@@ -295,6 +295,7 @@ pub enum DecodeError {
 	IoError(std::io::Error),
 	UnknownVersionString,
 	UnexpectedEof,
+	LzwInvalidCode,
 	ColorIndexOutOfBounds,
 	InvalidVersion,
 	UnknownBlock { byte: u8 },
@@ -311,6 +312,9 @@ impl fmt::Display for DecodeError {
 			}
 			DecodeError::UnexpectedEof => {
 				write!(f, "Found the end of the data at a weird spot")
+			}
+			DecodeError::LzwInvalidCode => {
+				write!(f, "the LZW stream contained invalid data")
 			}
 			DecodeError::ColorIndexOutOfBounds => {
 				write!(

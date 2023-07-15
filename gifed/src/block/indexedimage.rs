@@ -1,4 +1,4 @@
-use weezl::encode::Encoder;
+use weezl::{encode::Encoder, LzwError};
 
 use crate::{reader::DecodeError, EncodeError};
 
@@ -129,8 +129,11 @@ impl CompressedImage {
 		let data: Vec<u8> = blocks.into_iter().map(<_>::into_iter).flatten().collect();
 
 		//TODO: remove unwrap
-		let mut decompressor = weezl::decode::Decoder::new(weezl::BitOrder::Lsb, lzw_code_size);
-		let indicies = decompressor.decode(&data).unwrap();
+		let mut decompressor = weezl::decode::Decoder::new(weezl::BitOrder::Msb, lzw_code_size);
+		let indicies = match decompressor.decode(&data) {
+			Err(LzwError::InvalidCode) => Err(DecodeError::LzwInvalidCode),
+			Ok(o) => Ok(o),
+		}?;
 
 		Ok(IndexedImage {
 			image_descriptor,
