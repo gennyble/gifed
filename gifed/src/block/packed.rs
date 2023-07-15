@@ -15,7 +15,7 @@ impl GraphicPacked {
 	}
 
 	pub fn disposal_method(&self) -> u8 {
-		self.raw & 0b000_111_0_0 >> 2
+		(self.raw & 0b000_111_0_0) >> 2
 	}
 
 	pub fn set_disposal_method(&mut self, disposal: u8) {
@@ -25,7 +25,7 @@ impl GraphicPacked {
 	}
 
 	pub fn user_input(&self) -> bool {
-		self.raw & 0b000_000_1_0 > 0
+		(self.raw & 0b000_000_1_0) > 0
 	}
 
 	pub fn set_user_input(&mut self, flag: bool) {
@@ -37,7 +37,7 @@ impl GraphicPacked {
 	}
 
 	pub fn transparent_flag(&self) -> bool {
-		self.raw & 0b000_000_0_1 > 0
+		(self.raw & 0b000_000_0_1) > 0
 	}
 
 	pub fn set_transparent_flag(&mut self, flag: bool) {
@@ -56,7 +56,7 @@ pub struct ImagePacked {
 
 impl ImagePacked {
 	pub fn color_table(&self) -> bool {
-		self.raw & 0b1_0_0_00_000 > 0
+		(self.raw & 0b1_0_0_00_000) > 0
 	}
 
 	pub fn set_color_table(&mut self, flag: bool) {
@@ -68,7 +68,7 @@ impl ImagePacked {
 	}
 
 	pub fn interlaced(&self) -> bool {
-		self.raw & 0b0_1_0_00_000 > 0
+		(self.raw & 0b0_1_0_00_000) > 0
 	}
 
 	pub fn set_interlaced(&mut self, flag: bool) {
@@ -80,7 +80,7 @@ impl ImagePacked {
 	}
 
 	pub fn sorted(&self) -> bool {
-		self.raw & 0b0_0_1_00_000 > 0
+		(self.raw & 0b0_0_1_00_000) > 0
 	}
 
 	pub fn set_sorted(&mut self, flag: bool) {
@@ -93,7 +93,7 @@ impl ImagePacked {
 
 	pub fn reserved_87a(&self) -> u8 {
 		// There was no sort flag in 87a
-		self.raw & 0b0_0_111_000 >> 3
+		(self.raw & 0b0_0_111_000) >> 3
 	}
 
 	pub fn set_reserved_87a(&mut self, reserved: u8) {
@@ -103,7 +103,7 @@ impl ImagePacked {
 	}
 
 	pub fn reserved_89a(&self) -> u8 {
-		self.raw & 0b0_0_0_11_000 >> 3
+		(self.raw & 0b0_0_0_11_000) >> 3
 	}
 
 	pub fn set_reserved_89a(&mut self, reserved: u8) {
@@ -130,7 +130,7 @@ pub struct ScreenPacked {
 
 impl ScreenPacked {
 	pub fn color_table(&self) -> bool {
-		self.raw & 0b1_000_0_000 > 0
+		(self.raw & 0b1_000_0_000) > 0
 	}
 
 	pub fn set_color_table(&mut self, flag: bool) {
@@ -150,7 +150,7 @@ impl ScreenPacked {
 	}
 
 	pub fn sorted(&self) -> bool {
-		self.raw & 0b0_000_1_000 > 0
+		(self.raw & 0b0_000_1_000) > 0
 	}
 
 	pub fn set_sorted(&mut self, flag: bool) {
