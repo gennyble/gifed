@@ -41,10 +41,10 @@ impl GraphicControl {
 	/// is recognized, or None if it was set to a reserved value.
 	pub fn disposal_method(&self) -> Option<DisposalMethod> {
 		match self.packed.disposal_method() {
-			0 => Some(DisposalMethod::NoAction),
-			1 => Some(DisposalMethod::DoNotDispose),
-			2 => Some(DisposalMethod::RestoreBackground),
-			3 => Some(DisposalMethod::RestorePrevious),
+			0b000 => Some(DisposalMethod::NoAction),
+			0b001 => Some(DisposalMethod::DoNotDispose),
+			0b010 => Some(DisposalMethod::RestoreBackground),
+			0b011 => Some(DisposalMethod::RestorePrevious),
 			_ => None,
 		}
 	}
