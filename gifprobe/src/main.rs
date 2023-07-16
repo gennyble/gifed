@@ -17,14 +17,19 @@ fn main() {
 		return;
 	};
 
-	let expand = match std::env::args().nth(2).as_deref() {
-		Some("expand") => true,
-		None => false,
-		Some(str) => {
-			eprintln!("{str} is not recognised. Did you mean 'expand'?");
-			return;
+	let mut expand = false;
+	let mut colors = false;
+	let args: Vec<String> = std::env::args().skip(2).collect();
+	for cmd in args {
+		match cmd.as_str() {
+			"expand" => expand = true,
+			"colors" | "colours" => colors = true,
+			_ => {
+				eprintln!("{cmd} is not a valid subcommand");
+				return;
+			}
 		}
-	};
+	}
 
 	let decoder = Decoder::file(&file).unwrap();
 	let mut reader = decoder.read().unwrap();
@@ -36,12 +41,24 @@ fn main() {
 		reader.screen_descriptor.height.yellow()
 	);
 
-	if reader.screen_descriptor.has_color_table() {
+	if let Some(plt) = reader.palette.as_ref() {
 		println!(
 			"\tGlobal Color Table Present {}\n\tGlobal Color Table Size {}",
 			"Yes".green(),
 			reader.screen_descriptor.color_table_len().green()
 		);
+
+		if colors {
+			for (idx, clr) in plt.into_iter().enumerate() {
+				println!(
+					"\t{} {}, {}, {}",
+					idx.color(owo_colors::Rgb(clr.r, clr.g, clr.b)),
+					clr.r,
+					clr.g,
+					clr.b
+				);
+			}
+		}
 	} else {
 		println!(
 			"\tGlobal Color Table Present {}\n\tGlobal Color Table Size {}",
@@ -68,7 +85,7 @@ fn main() {
 
 		match block {
 			Block::CompressedImage(img) => {
-				describe_image(&img, offset);
+				describe_image(img, offset, expand, colors);
 				img_count += 1;
 			}
 			Block::GraphicControlExtension(gce) => {
@@ -77,7 +94,11 @@ fn main() {
 				let dispose_string = if let Some(dispose) = gce.disposal_method() {
 					dispose.to_string()
 				} else {
-					format!("Reserved: {:b}", gce.packed().disposal_method())
+					format!(
+						"Reserved: {:b} [packed {:08b}]",
+						gce.packed().disposal_method(),
+						gce.packed().raw
+					)
 				};
 
 				print!("Graphic Control Extension");
@@ -172,7 +193,7 @@ fn main() {
 	);
 }
 
-fn describe_image(bli: &CompressedImage, offset: Range<usize>) {
+fn describe_image(bli: CompressedImage, offset: Range<usize>, expand: bool, colors: bool) {
 	print!("Image");
 	print_offset(offset);
 
@@ -184,18 +205,54 @@ fn describe_image(bli: &CompressedImage, offset: Range<usize>) {
 		bli.image_descriptor.height.yellow(),
 	);
 
-	if bli.image_descriptor.has_color_table() {
+	if expand {
+		println!("\tLZW Code Size {}", bli.lzw_code_size.yellow());
+	}
+
+	if let Some(plt) = bli.palette().as_ref() {
 		println!(
 			"\tLocal Color Table Present {}\n\tLocal Color Table Size {}",
 			"Yes".green(),
 			bli.image_descriptor.color_table_size().green()
 		);
+
+		if colors {
+			for (idx, clr) in plt.into_iter().enumerate() {
+				println!("\t{idx} {}, {}, {}", clr.r, clr.g, clr.b);
+			}
+		}
 	} else {
 		println!(
 			"\tLocal Color Table Present {}\n\tLocal Color Table Size {}",
 			"No".red(),
 			bli.image_descriptor.color_table_size().red()
 		);
+	}
+
+	match bli.decompress() {
+		Err(e) => {
+			println!("\tDecompress Failed {}", e.to_string().red());
+		}
+		Ok(img) if colors => {
+			let mut indicie_count = vec![0; 256];
+			let mut unique = 0;
+			for idx in img.indicies {
+				if indicie_count[idx as usize] == 0 {
+					unique += 1;
+				}
+
+				indicie_count[idx as usize] += 1;
+			}
+
+			println!("\tUnique Indicies {}", unique.yellow());
+
+			for (idx, &count) in indicie_count.iter().enumerate() {
+				if count > 0 {
+					println!("\t\t{idx} {count}");
+				}
+			}
+		}
+		Ok(_) => (),
 	}
 }
 
