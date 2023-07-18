@@ -3,5 +3,6 @@ members = [
 	"gifed",
 	"gifprobe",
 	"gaudio",
-	"slugs"
+	"slugs",
+	"infohazard"
 ]
