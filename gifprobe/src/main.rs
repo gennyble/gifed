@@ -153,7 +153,7 @@ fn main() {
 
 				if app_ident == "NETSCAPE" {
 					let data = app.data();
-					let looping = u16::from_le_bytes([data[0], data[1]]);
+					let looping = u16::from_le_bytes([data[1], data[2]]);
 
 					if looping == 0 {
 						println!("\tLoop {}", "forever".yellow())
