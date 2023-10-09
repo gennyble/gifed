@@ -1,8 +1,2 @@
 [workspace]
-members = [
-	"gifed",
-	"gifprobe",
-	"gaudio",
-	"slugs",
-	"infohazard"
-]
+members = ["gifed", "gifprobe", "gaudio", "gifcheck"]
