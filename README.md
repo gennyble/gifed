@@ -26,7 +26,7 @@ These are part of the 89a spec, but are kept separate as they're not "core" to t
 - [x] Application Extension
 - [x] Comment Extension
 - [ ] Plain Text Extension
-- [ ] Netscape Looping Extension ([details][netscape])
+- [x] Netscape Looping Extension ([details][netscape])
 
 ### Relevant Writings
 
@@ -43,15 +43,6 @@ Similar to FFMPEG's ffprobe, gifprobe will print details of a gif to stdout.
 
 ## gaudio
 Nothing valued is here. Inject/Retrieve MP3 files from GiFs. I'd like to eventually play them right outta the thing, right, but that's a lot harder.
-
-## TODO: theft
-gif tool for weird gif things.  
-just the place i put things  
-that have nowhere else to go  
-so i stop making so many  
-weird little projects here
-
-eventually i think it will absorb gaudio
 
 # License
 gifed, gifprobe, and gaudio are licensed under Creative Commons Zero 1.0; they're in the public domain. Attribution is appreciated, but not required.
