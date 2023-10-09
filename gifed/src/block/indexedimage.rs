@@ -34,7 +34,7 @@ impl IndexedImage {
 
 	/// The `lzw_code_size` should be None if there is a local color table present. If
 	/// this image is using the Global Color Table, you must provide an
-	/// LZW Minimum Code Size here. It is equal to the value of [Palette::packed_len], but
+	/// LZW Minimum Code Size here. It is equal to the value of [Palette::packed_len] + 1, but
 	/// must also be at least 2.
 	pub fn compress(self, lzw_code_size: Option<u8>) -> Result<CompressedImage, EncodeError> {
 		// gen- The old code had a +1 here. Why?
@@ -46,14 +46,12 @@ impl IndexedImage {
 			Some(palette) => palette.lzw_code_size(),
 			None => match lzw_code_size {
 				None => return Err(EncodeError::InvalidCodeSize { lzw_code_size: 0 }),
-				Some(mcs) => mcs,
+				Some(mcs) => mcs.max(2),
 			},
 		};
 
-		let mcs = if mcs < 2 { 2 } else { mcs };
-
 		//FIXME: gen- This seems  broken
-		//let compressed = LZW::encode(mcs, &self.indicies);
+		//let compressed = crate::LZW::encode(mcs, &self.indicies);
 		let compressed = Encoder::new(weezl::BitOrder::Lsb, mcs)
 			.encode(&self.indicies)
 			.unwrap();
@@ -86,7 +84,7 @@ impl CompressedImage {
 	}
 
 	pub fn top(&self) -> u16 {
-		self.image_descriptor.left
+		self.image_descriptor.top
 	}
 
 	pub fn width(&self) -> u16 {
@@ -105,6 +103,11 @@ impl CompressedImage {
 		let mut ret = vec![];
 
 		ret.extend_from_slice(&self.image_descriptor.as_bytes());
+
+		if let Some(palette) = &self.local_color_table {
+			ret.extend_from_slice(&palette.as_bytes());
+		}
+
 		ret.push(self.lzw_code_size);
 
 		for block in &self.blocks {
@@ -128,8 +131,15 @@ impl CompressedImage {
 
 		let data: Vec<u8> = blocks.into_iter().map(<_>::into_iter).flatten().collect();
 
+		println!("lzw: {lzw_code_size}");
+
+		if local_color_table.is_some() {
+			let lct = local_color_table.as_ref().unwrap();
+			println!("lct-lzw: {}", lct.lzw_code_size());
+		}
+
 		//TODO: remove unwrap
-		let mut decompressor = weezl::decode::Decoder::new(weezl::BitOrder::Msb, lzw_code_size);
+		let mut decompressor = weezl::decode::Decoder::new(weezl::BitOrder::Lsb, lzw_code_size);
 		let indicies = match decompressor.decode(&data) {
 			Err(LzwError::InvalidCode) => Err(DecodeError::LzwInvalidCode),
 			Ok(o) => Ok(o),

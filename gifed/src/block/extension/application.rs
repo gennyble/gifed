@@ -1,3 +1,4 @@
+#[derive(Clone, Debug)]
 pub struct Application {
 	pub(crate) identifier: [u8; 8],
 	pub(crate) authentication_code: [u8; 3],

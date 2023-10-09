@@ -2,6 +2,7 @@ use std::convert::TryInto;
 
 use super::{packed::ScreenPacked, Palette};
 
+#[derive(Clone, Debug)]
 pub struct ScreenDescriptor {
 	pub width: u16,
 	pub height: u16,
