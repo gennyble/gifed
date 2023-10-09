@@ -4,7 +4,7 @@ mod imagebuilder;
 use std::{error::Error, fmt, io::Write};
 
 pub use gifbuilder::GifBuilder;
-pub use imagebuilder::ImageBuilder;
+pub use imagebuilder::{BuiltImage, ImageBuilder};
 
 use crate::block::{encode_block, Block, LoopCount, Palette, ScreenDescriptor, Version};
 
@@ -47,9 +47,7 @@ impl<W: Write> Writer<W> {
 		this.write_all(&screen_descriptor.as_bytes())?;
 
 		if let Some(palette) = this.global_palette.as_ref() {
-			let padding: Vec<u8> = std::iter::repeat(0u8).take(palette.padding()).collect();
 			this.write_all(&palette.as_bytes())?;
-			this.write_all(&padding)?;
 		}
 
 		Ok(this)

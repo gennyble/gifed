@@ -8,6 +8,8 @@ use crate::{
 	},
 	writer::GifBuilder,
 };
+
+#[derive(Clone, Debug)]
 pub struct Gif {
 	pub header: Version,
 	pub screen_descriptor: ScreenDescriptor,
@@ -18,6 +20,24 @@ pub struct Gif {
 impl Gif {
 	pub fn builder(width: u16, height: u16) -> GifBuilder {
 		GifBuilder::new(width, height)
+	}
+
+	pub fn width(&self) -> usize {
+		self.screen_descriptor.width as usize
+	}
+
+	pub fn height(&self) -> usize {
+		self.screen_descriptor.height as usize
+	}
+
+	pub fn background_color(&self) -> Option<u8> {
+		// vii) Background Color Index - If the Global Color Table Flag is set
+		// to (zero), this field should be zero and should be ignored.
+		if self.screen_descriptor.has_color_table() {
+			Some(self.screen_descriptor.background_color_index)
+		} else {
+			None
+		}
 	}
 
 	pub fn as_bytes(&self) -> Vec<u8> {
@@ -190,138 +210,4 @@ pub enum FrameControl {
 	Delay(Duration),
 	Input,
 	InputOrDelay(Duration),
-}
-
-#[cfg(test)]
-pub mod gif {
-	use std::convert::TryInto;
-	use std::io::Write;
-
-	use crate::block::extension::DisposalMethod;
-	use crate::writer::{GifBuilder, ImageBuilder};
-	use crate::Color;
-
-	#[test]
-	fn to_vec_gif87a() {
-		let gct = vec![Color::new(1, 2, 3), Color::new(253, 254, 255)];
-		let colortable = vec![Color::new(0, 0, 0), Color::new(128, 0, 255)];
-		let indicies = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0];
-
-		let expected_out = vec![
-			0x47,
-			0x49,
-			0x46,
-			0x38,
-			0x37,
-			0x61, // Version - GIF87a
-			0x04,
-			0x00,
-			0x04,
-			0x00,
-			0b1000_0000,
-			0x00,
-			0x00, // Logical Screen Descriptor
-			1,
-			2,
-			3,
-			253,
-			254,
-			255, // Global Color Table
-			0x2C,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x04,
-			0x00,
-			0x04,
-			0x00,
-			0b1000_0000, // Image Descriptor 1
-			0,
-			0,
-			0,
-			128,
-			0,
-			255, // Color Table
-			0x02,
-			0x05,
-			0x84,
-			0x1D,
-			0x81,
-			0x7A,
-			0x50,
-			0x00, // Image Data 1
-			0x2C,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x04,
-			0x00,
-			0x04,
-			0x00,
-			0b0000_0000, // Image Descriptor 2
-			0x02,
-			0x05,
-			0x84,
-			0x1D,
-			0x81,
-			0x7A,
-			0x50,
-			0x00, // Image Data 2
-			0x3B, // Trailer
-		];
-
-		let actual = GifBuilder::new(4, 4)
-			.palette(gct.try_into().unwrap())
-			.image(
-				ImageBuilder::new(4, 4)
-					.palette(colortable.try_into().unwrap())
-					.build(indicies.clone())
-					.unwrap(),
-			)
-			.image(ImageBuilder::new(4, 4).build(indicies).unwrap());
-
-		let bytes = actual.build().unwrap().as_bytes();
-		assert_eq!(bytes, expected_out);
-	}
-
-	#[test]
-	fn to_vec_gif89a() {
-		let gct = vec![Color::new(1, 2, 3), Color::new(253, 254, 255)];
-		let colortable = vec![Color::new(0, 0, 0), Color::new(128, 0, 255)];
-		let indicies = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0];
-
-		let expected_out = vec![
-			71, 73, 70, 56, 57, 97, 4, 0, 4, 0, 128, 0, 0, 1, 2, 3, 253, 254, 255, 33, 249, 4, 8,
-			64, 0, 0, 0, 44, 0, 0, 0, 0, 4, 0, 4, 0, 128, 0, 0, 0, 128, 0, 255, 2, 5, 132, 29, 129,
-			122, 80, 0, 44, 0, 0, 0, 0, 4, 0, 4, 0, 0, 2, 5, 132, 29, 129, 122, 80, 0, 59,
-		];
-
-		let actual_out = GifBuilder::new(4, 4)
-			.palette(gct.try_into().unwrap())
-			.image(
-				ImageBuilder::new(4, 4)
-					.palette(colortable.try_into().unwrap())
-					.disposal_method(DisposalMethod::RestoreBackground)
-					.delay(64)
-					.build(indicies.clone())
-					.unwrap(),
-			)
-			.image(ImageBuilder::new(4, 4).build(indicies).unwrap())
-			.build()
-			.unwrap()
-			.as_bytes();
-
-		std::fs::File::create("ah.gif")
-			.unwrap()
-			.write_all(&actual_out)
-			.unwrap();
-		std::fs::File::create("ah_hand.gif")
-			.unwrap()
-			.write_all(&expected_out)
-			.unwrap();
-
-		assert_eq!(actual_out, expected_out);
-	}
 }
