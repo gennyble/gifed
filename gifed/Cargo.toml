@@ -1,9 +1,9 @@
 [package]
 name = "gifed"
 version = "0.2.0"
-authors = ["Genevieve <gen@nyble.dev>"]
+authors = ["gennyble <gen@nyble.dev>"]
 edition = "2018"
-license = "CC0-1.0"
+license = "ISC"
 description = "Gif encoding and decoding with fine control"
 repository = "https://github.com/genuinebyte/gifed"
 

@@ -1,9 +1,9 @@
 [package]
 name = "gifprobe"
 version = "0.1.0"
-authors = ["Genevive <gen@nyble.dev"]
+authors = ["gennyble <gen@nyble.dev"]
 edition = "2018"
-license = "CC0-1.0"
+license = "ISC"
 description = "Print the details of a gif to stdout; ffprobe for gif"
 repository = "https://github.com/genuinebyte/gifed"
 
