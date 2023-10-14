@@ -1,4 +1,7 @@
-use std::io::{BufRead, BufReader, Cursor, ErrorKind, Read};
+use std::{
+	io::{BufRead, BufReader, Cursor, ErrorKind, Read},
+	time::Duration,
+};
 
 use crate::mp3::bitrate::Bitrate;
 
@@ -49,15 +52,17 @@ impl Breaker {
 				let mut data = vec![0; dat_len];
 				reader.read_exact(&mut data)?;
 				consumed += dat_len;
+				let frame = Frame { header, data };
 
 				println!(
-					"{}kbps {}kHz {}bytes",
-					header.bitrate.kbps().unwrap(),
-					header.samplerate.freq() / 1000,
-					header.length()
+					"{}kbps {}kHz {:<4}bytes [{}ms]",
+					frame.header.bitrate.kbps().unwrap(),
+					frame.header.samplerate.freq() / 1000,
+					frame.header.length(),
+					frame.duration().as_millis()
 				);
 
-				self.frames.push(Frame { header, data });
+				self.frames.push(frame);
 			} else {
 				println!("unsynced!");
 				panic!()
@@ -112,6 +117,28 @@ impl Breaker {
 pub struct Frame {
 	pub header: Header,
 	pub data: Vec<u8>,
+}
+
+impl Frame {
+	/// The number of moments-in-time this frame represents. This is constant
+	/// and related to the [Layer]
+	pub fn sample_count(&self) -> usize {
+		// http://www.datavoyage.com/mpgscript/mpeghdr.htm
+		// > Frame size is the number of samples contained in a frame. It is
+		// > constant and always 384 samples for Layer I and 1152 samples for
+		// > Layer II and Layer III.
+		match self.header.layer {
+			Layer::Reserved => panic!(),
+			Layer::Layer1 => 384,
+			Layer::Layer2 | Layer::Layer3 => 1152,
+		}
+	}
+
+	/// Compute the duration of this audio frame
+	pub fn duration(&self) -> Duration {
+		let millis = (self.sample_count() * 1000) / self.header.samplerate.freq();
+		Duration::from_millis(millis as u64)
+	}
 }
 
 pub struct Header {
