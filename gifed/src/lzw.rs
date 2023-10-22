@@ -28,14 +28,11 @@ impl LZW {
 			buffer.push(index);
 
 			if !dictionary.contains_key(&buffer) {
-				buffer.pop();
-
-				if let Some(&code) = dictionary.get(&buffer) {
+				if let Some(&code) = dictionary.get(&buffer[..buffer.len() - 1]) {
 					out.push_bits(code_size, code);
 
-					// Put the code back and add the vec to the dict
-					buffer.push(indicie);
-					dictionary.insert(buffer.clone(), next_code);
+					// add the vec to the dict
+					dictionary.insert(buffer, next_code);
 					next_code += 1;
 
 					// If the next_code can't fit in the code_size, we have to increase it
@@ -43,10 +40,9 @@ impl LZW {
 						code_size += 1;
 					}
 
-					buffer.clear();
-					buffer.push(indicie);
+					buffer = vec![index];
 				} else {
-					println!("indicie is: {}", indicie);
+					println!("index is: {index}");
 					println!("buffer is: {:?}", buffer);
 					println!("dictionary: {:?}", dictionary);
 					unreachable!()
