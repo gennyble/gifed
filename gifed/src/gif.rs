@@ -64,16 +64,12 @@ impl<'a> Iterator for ImageIterator<'a> {
 		let starting_block = self.block_index;
 
 		let img = loop {
-			match self.gif.blocks.get(self.block_index) {
-				Some(block) => {
-					if let Block::CompressedImage(img) = block {
-						// Step over this image so we don't hit it next time
-						self.block_index += 1;
+			let block = self.gif.blocks.get(self.block_index)?;
+			if let Block::CompressedImage(img) = block {
+				// Step over this image so we don't hit it next time
+				self.block_index += 1;
 
-						break img;
-					}
-				}
-				None => return None,
+				break img;
 			}
 
 			self.block_index += 1;
