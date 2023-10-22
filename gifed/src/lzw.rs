@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 pub struct LZW {}
 impl LZW {
-	pub fn encode(minimum_size: u8, indicies: &[u8]) -> Vec<u8> {
+	pub fn encode(minimum_size: u8, indices: &[u8]) -> Vec<u8> {
 		let mut dictionary: HashMap<Vec<u8>, u16> = HashMap::new();
 
 		let cc = 1 << minimum_size;
 		let eoi = cc + 1;
 
-		println!("mcs {} | cc {}", minimum_size, cc);
+		println!("mcs {minimum_size} | cc {cc}");
 
 		// Fill dictionary with self-descriptive values
 		for value in 0..cc {
@@ -18,14 +18,14 @@ impl LZW {
 		let mut next_code = eoi + 1;
 		let mut code_size = minimum_size + 1;
 
-		let mut iter = indicies.iter();
+		let mut iter = indices.iter();
 		let mut out = BitStream::new();
 		let mut buffer = vec![*iter.next().unwrap()];
 
 		out.push_bits(code_size, cc);
 
-		for &indicie in iter {
-			buffer.push(indicie);
+		for &index in iter {
+			buffer.push(index);
 
 			if !dictionary.contains_key(&buffer) {
 				buffer.pop();
