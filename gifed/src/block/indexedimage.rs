@@ -17,7 +17,7 @@ impl IndexedImage {
 	}
 
 	pub fn top(&self) -> u16 {
-		self.image_descriptor.left
+		self.image_descriptor.top
 	}
 
 	pub fn width(&self) -> u16 {
@@ -86,7 +86,7 @@ impl CompressedImage {
 	}
 
 	pub fn top(&self) -> u16 {
-		self.image_descriptor.left
+		self.image_descriptor.top
 	}
 
 	pub fn width(&self) -> u16 {
@@ -126,7 +126,7 @@ impl CompressedImage {
 			blocks,
 		} = self;
 
-		let data: Vec<u8> = blocks.into_iter().map(<_>::into_iter).flatten().collect();
+		let data: Vec<u8> = blocks.into_iter().flat_map(<_>::into_iter).collect();
 
 		//TODO: remove unwrap
 		let mut decompressor = weezl::decode::Decoder::new(weezl::BitOrder::Msb, lzw_code_size);

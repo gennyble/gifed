@@ -37,8 +37,8 @@ impl From<(u8, u8, u8)> for Color {
 	}
 }
 
-impl Into<[u8; 3]> for Color {
-	fn into(self) -> [u8; 3] {
-		[self.r, self.g, self.b]
+impl From<Color> for [u8; 3] {
+	fn from(val: Color) -> Self {
+		[val.r, val.g, val.b]
 	}
 }

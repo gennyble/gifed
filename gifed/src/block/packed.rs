@@ -1,3 +1,5 @@
+#![allow(clippy::unusual_byte_groupings)]
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GraphicPacked {
 	pub raw: u8,

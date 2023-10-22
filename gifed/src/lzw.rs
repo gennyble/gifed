@@ -18,7 +18,7 @@ impl LZW {
 		let mut next_code = eoi + 1;
 		let mut code_size = minimum_size + 1;
 
-		let mut iter = indicies.into_iter();
+		let mut iter = indicies.iter();
 		let mut out = BitStream::new();
 		let mut buffer = vec![*iter.next().unwrap()];
 
@@ -54,7 +54,7 @@ impl LZW {
 			}
 		}
 
-		if buffer.len() > 0 {
+		if !buffer.is_empty() {
 			match dictionary.get(&buffer) {
 				Some(&code) => out.push_bits(code_size, code),
 				None => {
@@ -116,7 +116,7 @@ impl BitStream {
 		loop {
 			if new_index >= 8 {
 				self.formed.push(current32 as u8);
-				current32 = current32 >> 8;
+				current32 >>= 8;
 				new_index -= 8;
 			} else {
 				self.current = current32 as u8;
@@ -155,7 +155,7 @@ mod bitstream_test {
 		for byte in &bsvec {
 			print!("{:b} ", byte);
 		}
-		println!("");
+		println!();
 
 		assert_eq!(bsvec, vec![0b1001_1111, 0b0000_0001]);
 	}
@@ -171,7 +171,7 @@ mod bitstream_test {
 		for byte in &bsvec {
 			print!("{:b} ", byte);
 		}
-		println!("");
+		println!();
 
 		assert_eq!(bsvec, vec![0b0000_0011, 0b0001_0000]);
 	}
