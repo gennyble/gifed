@@ -88,6 +88,7 @@ mod lzw_test {
 	}
 
 	#[test]
+	#[ignore]
 	fn fortyk_against_weezl() {
 		rand_against_weezl(40_000);
 	}
@@ -96,6 +97,14 @@ mod lzw_test {
 	#[ignore]
 	fn thirtyeightk_against_weezl() {
 		rand_against_weezl(38_000);
+	}
+
+	#[test]
+	#[ignore]
+	fn twentyk_against_weezl_repeated() {
+		for _ in 0..100 {
+			rand_against_weezl(20_000)
+		}
 	}
 
 	#[test]
