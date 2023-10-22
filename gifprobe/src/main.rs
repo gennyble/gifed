@@ -10,7 +10,7 @@ use gifed::{
 use owo_colors::OwoColorize;
 
 fn main() {
-	let file = if let Some(file) = std::env::args().skip(1).next() {
+	let file = if let Some(file) = std::env::args().nth(1) {
 		file
 	} else {
 		println!("usage: gifprobe file.gif");
@@ -49,7 +49,7 @@ fn main() {
 		);
 
 		if colors {
-			for (idx, clr) in plt.into_iter().enumerate() {
+			for (idx, clr) in plt.iter().enumerate() {
 				println!(
 					"\t{} {}, {}, {}",
 					idx.color(owo_colors::Rgb(clr.r, clr.g, clr.b)),
@@ -217,7 +217,7 @@ fn describe_image(bli: CompressedImage, offset: Range<usize>, expand: bool, colo
 		);
 
 		if colors {
-			for (idx, clr) in plt.into_iter().enumerate() {
+			for (idx, clr) in plt.iter().enumerate() {
 				println!("\t{idx} {}, {}, {}", clr.r, clr.g, clr.b);
 			}
 		}
