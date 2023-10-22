@@ -42,7 +42,7 @@ impl Palette {
 	/// Returns the number of items that the decoder *thinks* is in the palette.
 	/// This is 2^(n + 1) where n = [Palette::packed_len]
 	pub fn computed_len(&self) -> usize {
-		2usize.pow(self.packed_len() as u32 + 1)
+		1 << (self.packed_len() + 1)
 	}
 
 	/// Pushes a color on to the end of the table
