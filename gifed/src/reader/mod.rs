@@ -22,7 +22,7 @@ pub struct Decoder<R: Read> {
 
 impl Decoder<BufReader<File>> {
 	pub fn file<P: AsRef<Path>>(path: P) -> Result<Self, DecodeError> {
-		let file = File::open(path).map_err(|e| DecodeError::IoError(e))?;
+		let file = File::open(path).map_err(DecodeError::IoError)?;
 		let buffreader = BufReader::new(file);
 		Ok(Decoder::new(buffreader))
 	}
@@ -61,11 +61,8 @@ impl<R: Read> Decoder<R> {
 		let mut decoder = self.read()?;
 
 		let mut blocks = vec![];
-		loop {
-			match decoder.block()? {
-				Some(block) => blocks.push(block.block),
-				None => break,
-			}
+		while let Some(block) = decoder.block()? {
+			blocks.push(block.block)
 		}
 
 		Ok(Gif {
@@ -283,7 +280,7 @@ impl<R: Read> SmartReader<R> {
 	}
 
 	pub fn read_palette(&mut self, count: usize) -> Result<Palette, DecodeError> {
-		let mut buf = vec![0; count as usize * 3];
+		let mut buf = vec![0; count * 3];
 		self.read_exact(&mut buf)?;
 
 		Ok(Palette::try_from(buf.as_slice()).unwrap())

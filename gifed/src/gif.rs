@@ -23,7 +23,7 @@ impl Gif {
 	pub fn as_bytes(&self) -> Vec<u8> {
 		let mut out = vec![];
 
-		out.extend_from_slice(&self.header.as_bytes());
+		out.extend_from_slice(self.header.as_bytes());
 		out.extend_from_slice(&self.screen_descriptor.as_bytes());
 
 		if let Some(gct) = &self.global_color_table {
@@ -44,7 +44,7 @@ impl Gif {
 		File::create(path.as_ref())?.write_all(&self.as_bytes())
 	}
 
-	pub fn images<'a>(&'a self) -> ImageIterator<'a> {
+	pub fn images(&self) -> ImageIterator<'_> {
 		ImageIterator {
 			gif: self,
 			block_index: 0,
@@ -65,15 +65,14 @@ impl<'a> Iterator for ImageIterator<'a> {
 
 		let img = loop {
 			match self.gif.blocks.get(self.block_index) {
-				Some(block) => match block {
-					Block::CompressedImage(img) => {
+				Some(block) => {
+					if let Block::CompressedImage(img) = block {
 						// Step over this image so we don't hit it next time
 						self.block_index += 1;
 
 						break img;
 					}
-					_ => (),
-				},
+				}
 				None => return None,
 			}
 
@@ -81,7 +80,7 @@ impl<'a> Iterator for ImageIterator<'a> {
 		};
 
 		Some(Image {
-			compressed: &img,
+			compressed: img,
 			global_palette: self.gif.global_color_table.as_ref(),
 			blocks: &self.gif.blocks[starting_block..self.block_index],
 		})
@@ -123,8 +122,7 @@ impl<'a> Image<'a> {
 
 	pub fn transparent_index(&self) -> Option<u8> {
 		self.graphic_control()
-			.map(|gce| gce.transparent_index())
-			.flatten()
+			.and_then(|gce| gce.transparent_index())
 	}
 
 	pub fn frame_control(&self) -> Option<FrameControl> {
@@ -193,7 +191,7 @@ pub enum FrameControl {
 }
 
 #[cfg(test)]
-pub mod gif {
+pub mod gif_test {
 	use std::convert::TryInto;
 	use std::io::Write;
 
