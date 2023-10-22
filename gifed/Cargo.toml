@@ -9,3 +9,6 @@ repository = "https://github.com/genuinebyte/gifed"
 
 [dependencies]
 weezl = "0.1.5"
+
+[dev-dependencies]
+rand = "0.8.5"

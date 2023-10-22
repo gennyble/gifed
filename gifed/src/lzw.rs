@@ -5,7 +5,7 @@ impl LZW {
 	pub fn encode(minimum_size: u8, indicies: &[u8]) -> Vec<u8> {
 		let mut dictionary: HashMap<Vec<u8>, u16> = HashMap::new();
 
-		let cc = 2u16.pow(minimum_size as u32);
+		let cc = 1 << minimum_size;
 		let eoi = cc + 1;
 
 		println!("mcs {} | cc {}", minimum_size, cc);
@@ -39,7 +39,7 @@ impl LZW {
 					next_code += 1;
 
 					// If the next_code can't fit in the code_size, we have to increase it
-					if next_code - 1 == 2u16.pow(code_size as u32) {
+					if next_code - 1 == 1 << code_size {
 						code_size += 1;
 					}
 
@@ -58,7 +58,9 @@ impl LZW {
 			match dictionary.get(&buffer) {
 				Some(&code) => out.push_bits(code_size, code),
 				None => {
-					panic!("Codes left in the buffer but the buffer is not a valid dictionary key!")
+					unreachable!(
+						"Codes left in the buffer but the buffer is not a valid dictionary key!"
+					)
 				}
 			}
 		}
@@ -72,23 +74,47 @@ impl LZW {
 mod lzw_test {
 	use super::*;
 
+	fn rand_against_weezl(length: usize) {
+		let range = rand::distributions::Uniform::from(0..=1);
+		let indices = rand::Rng::sample_iter(rand::thread_rng(), &range)
+			.take(length)
+			.collect::<Vec<_>>();
+		let weezl = weezl::encode::Encoder::new(weezl::BitOrder::Lsb, 2)
+			.encode(&indices)
+			.unwrap();
+		let us = LZW::encode(2, &indices);
+
+		assert_eq!(us.len(), weezl.len());
+	}
+
+	#[test]
+	fn fortyk_against_weezl() {
+		rand_against_weezl(40_000);
+	}
+
+	#[test]
+	#[ignore]
+	fn thirtyeightk_against_weezl() {
+		rand_against_weezl(38_000);
+	}
+
 	#[test]
 	fn encode() {
-		let indicies = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0];
+		let indices = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0];
 		let output = vec![0x84, 0x1D, 0x81, 0x7A, 0x50];
 
-		let lzout = LZW::encode(2, &indicies);
+		let lzout = LZW::encode(2, &indices);
 
 		assert_eq!(lzout, output);
 	}
 
 	#[test]
 	fn against_weezl() {
-		let indicies = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0];
+		let indices = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0];
 		let weezl = weezl::encode::Encoder::new(weezl::BitOrder::Lsb, 2)
-			.encode(&indicies)
+			.encode(&indices)
 			.unwrap();
-		let us = LZW::encode(2, &indicies);
+		let us = LZW::encode(2, &indices);
 
 		assert_eq!(weezl, us);
 	}
