@@ -145,15 +145,24 @@ impl BitStream {
 	}
 
 	fn push_bits(&mut self, count: u8, data: u16) {
+		// number of bits that are in self.current after we put in the new data
 		let mut new_index = self.index + count;
+		// combine self.current an the data we were given. shifts data over by
+		// the number of bits that are in self.current so we don't collide
 		let mut current32 = (self.current as u32) | ((data as u32) << self.index);
 
+		// Take bytes from current32 until we can store the partial in self.current
 		loop {
+			// Will we have over a byte of data in self.current?
 			if new_index >= 8 {
+				// Yes. Push the last 8-bits to the output vec
 				self.formed.push(current32 as u8);
+				// and make sure we remove them from current
 				current32 >>= 8;
+				// and that we adjust the index to reflect that
 				new_index -= 8;
 			} else {
+				// No, all data fits in the u8 of self.current. assign and break, we're done.
 				self.current = current32 as u8;
 				self.index = new_index;
 
