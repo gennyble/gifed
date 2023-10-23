@@ -8,6 +8,7 @@ description = "Gif encoding and decoding with fine control"
 repository = "https://github.com/genuinebyte/gifed"
 
 [dependencies]
+bitvec = "1.0.1"
 weezl = "0.1.5"
 
 [dev-dependencies]
