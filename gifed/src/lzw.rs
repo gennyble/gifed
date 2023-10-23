@@ -5,24 +5,24 @@ impl LZW {
 	pub fn encode(minimum_size: u8, indices: &[u8]) -> Vec<u8> {
 		let mut dictionary: HashMap<Vec<u8>, u16> = HashMap::new();
 
-		let cc = 1 << minimum_size;
-		let eoi = cc + 1;
+		let clear_code = 1 << minimum_size;
+		let end_of_information_code = clear_code + 1;
 
-		println!("mcs {minimum_size} | cc {cc}");
+		println!("mcs {minimum_size} | cc {clear_code}");
 
 		// Fill dictionary with self-descriptive values
-		for value in 0..cc {
+		for value in 0..clear_code {
 			dictionary.insert(vec![value as u8], value);
 		}
 
-		let mut next_code = eoi + 1;
+		let mut next_code = end_of_information_code + 1;
 		let mut code_size = minimum_size + 1;
 
 		let mut iter = indices.iter();
 		let mut out = BitStream::new();
 		let mut buffer = vec![*iter.next().unwrap()];
 
-		out.push_bits(code_size, cc);
+		out.push_bits(code_size, clear_code);
 
 		for &index in iter {
 			buffer.push(index);
