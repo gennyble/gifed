@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use bitvec::prelude::*;
+
 pub struct LZW {}
 impl LZW {
 	pub fn encode(minimum_size: u8, indices: &[u8]) -> Vec<u8> {
@@ -60,7 +62,7 @@ impl LZW {
 				}
 			}
 		}
-		out.push_bits(code_size, eoi);
+		out.push_bits(code_size, end_of_information_code);
 
 		out.vec()
 	}
@@ -126,55 +128,25 @@ mod lzw_test {
 }
 
 struct BitStream {
-	formed: Vec<u8>,
-	current: u8,
-	index: u8,
+	formed: BitVec<u8, Lsb0>,
 }
 
 impl BitStream {
 	fn new() -> Self {
 		Self {
-			formed: vec![],
-			current: 0,
-			index: 0,
+			formed: BitVec::EMPTY,
 		}
 	}
 
 	fn push_bits(&mut self, count: u8, data: u16) {
-		// number of bits that are in self.current after we put in the new data
-		let mut new_index = self.index + count;
-		// combine self.current an the data we were given. shifts data over by
-		// the number of bits that are in self.current so we don't collide
-		let mut current32 = (self.current as u32) | ((data as u32) << self.index);
-
-		// Take bytes from current32 until we can store the partial in self.current
-		loop {
-			// Will we have over a byte of data in self.current?
-			if new_index >= 8 {
-				// Yes. Push the last 8-bits to the output vec
-				self.formed.push(current32 as u8);
-				// and make sure we remove them from current
-				current32 >>= 8;
-				// and that we adjust the index to reflect that
-				new_index -= 8;
-			} else {
-				// No, all data fits in the u8 of self.current. assign and break, we're done.
-				self.current = current32 as u8;
-				self.index = new_index;
-
-				break;
-			}
+		for i in 0..count {
+			self.formed.push((data & (1 << i)) > 0)
 		}
 	}
 
-	fn vec(self) -> Vec<u8> {
-		let mut out = self.formed;
-
-		if self.index != 0 {
-			out.push(self.current);
-		}
-
-		out
+	fn vec(mut self) -> Vec<u8> {
+		self.formed.set_uninitialized(false);
+		self.formed.into_vec()
 	}
 }
 
