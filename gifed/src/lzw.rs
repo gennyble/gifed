@@ -2,9 +2,14 @@ use std::collections::HashMap;
 
 use bitvec::prelude::*;
 
-pub struct LZW {}
+pub struct LZW {
+	minimum_size: u8,
+	clear_code: u16,
+	end_of_information_code: u16,
+	dictionary: HashMap<Vec<u8>, u16>,
+}
 impl LZW {
-	pub fn encode(minimum_size: u8, indices: &[u8]) -> Vec<u8> {
+	pub fn new(minimum_size: u8) -> Self {
 		let mut dictionary: HashMap<Vec<u8>, u16> = HashMap::new();
 
 		let clear_code = 1 << minimum_size;
@@ -17,24 +22,50 @@ impl LZW {
 			dictionary.insert(vec![value as u8], value);
 		}
 
-		let mut next_code = end_of_information_code + 1;
-		let mut code_size = minimum_size + 1;
+		Self {
+			minimum_size,
+			clear_code,
+			end_of_information_code,
+			dictionary,
+		}
+	}
+
+	pub fn reset(&mut self) {
+		*self = Self::new(self.minimum_size)
+	}
+
+	pub fn decode(&mut self, encoded: &[u8]) -> Vec<u8> {
+		let mut input = BitStream::new();
+		for &byte in encoded {
+			input.push_bits(8, byte as u16);
+		}
+
+		let mut out = BitStream::new();
+
+		todo!();
+
+		out.vec()
+	}
+
+	pub fn encode(&mut self, indices: &[u8]) -> Vec<u8> {
+		let mut next_code = self.end_of_information_code + 1;
+		let mut code_size = self.minimum_size + 1;
 
 		let mut iter = indices.iter();
 		let mut out = BitStream::new();
 		let mut buffer = vec![*iter.next().unwrap()];
 
-		out.push_bits(code_size, clear_code);
+		out.push_bits(code_size, self.clear_code);
 
 		for &index in iter {
 			buffer.push(index);
 
-			if !dictionary.contains_key(&buffer) {
-				if let Some(&code) = dictionary.get(&buffer[..buffer.len() - 1]) {
+			if !self.dictionary.contains_key(&buffer) {
+				if let Some(&code) = self.dictionary.get(&buffer[..buffer.len() - 1]) {
 					out.push_bits(code_size, code);
 
 					// add the vec to the dict
-					dictionary.insert(buffer, next_code);
+					self.dictionary.insert(buffer, next_code);
 					next_code += 1;
 
 					// If the next_code can't fit in the code_size, we have to increase it
@@ -46,14 +77,14 @@ impl LZW {
 				} else {
 					println!("index is: {index}");
 					println!("buffer is: {:?}", buffer);
-					println!("dictionary: {:?}", dictionary);
+					println!("dictionary: {:?}", self.dictionary);
 					unreachable!()
 				}
 			}
 		}
 
 		if !buffer.is_empty() {
-			match dictionary.get(&buffer) {
+			match self.dictionary.get(&buffer) {
 				Some(&code) => out.push_bits(code_size, code),
 				None => {
 					unreachable!(
@@ -62,7 +93,7 @@ impl LZW {
 				}
 			}
 		}
-		out.push_bits(code_size, end_of_information_code);
+		out.push_bits(code_size, self.end_of_information_code);
 
 		out.vec()
 	}
@@ -80,7 +111,7 @@ mod lzw_test {
 		let weezl = weezl::encode::Encoder::new(weezl::BitOrder::Lsb, 2)
 			.encode(&indices)
 			.unwrap();
-		let us = LZW::encode(2, &indices);
+		let us = LZW::new(2).encode(&indices);
 
 		assert_eq!(us.len(), weezl.len());
 	}
@@ -110,7 +141,7 @@ mod lzw_test {
 		let indices = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0];
 		let output = vec![0x84, 0x1D, 0x81, 0x7A, 0x50];
 
-		let lzout = LZW::encode(2, &indices);
+		let lzout = LZW::new(2).encode(&indices);
 
 		assert_eq!(lzout, output);
 	}
@@ -121,7 +152,7 @@ mod lzw_test {
 		let weezl = weezl::encode::Encoder::new(weezl::BitOrder::Lsb, 2)
 			.encode(&indices)
 			.unwrap();
-		let us = LZW::encode(2, &indices);
+		let us = LZW::new(2).encode(&indices);
 
 		assert_eq!(weezl, us);
 	}
@@ -142,6 +173,16 @@ impl BitStream {
 		for i in 0..count {
 			self.formed.push((data & (1 << i)) > 0)
 		}
+	}
+
+	fn pop_bits(&mut self, count: u8) -> u16 {
+		let mut out = 0;
+		for i in (0..count).filter_map(|_| self.formed.pop()) {
+			out <<= 1;
+			let int: u16 = i.into();
+			out |= int;
+		}
+		out
 	}
 
 	fn vec(mut self) -> Vec<u8> {
