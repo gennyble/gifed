@@ -8,6 +8,8 @@ use crate::{
 	},
 	writer::GifBuilder,
 };
+
+#[derive(Clone, Debug)]
 pub struct Gif {
 	pub header: Version,
 	pub screen_descriptor: ScreenDescriptor,
@@ -18,6 +20,24 @@ pub struct Gif {
 impl Gif {
 	pub fn builder(width: u16, height: u16) -> GifBuilder {
 		GifBuilder::new(width, height)
+	}
+
+	pub fn width(&self) -> usize {
+		self.screen_descriptor.width as usize
+	}
+
+	pub fn height(&self) -> usize {
+		self.screen_descriptor.height as usize
+	}
+
+	pub fn background_color(&self) -> Option<u8> {
+		// vii) Background Color Index - If the Global Color Table Flag is set
+		// to (zero), this field should be zero and should be ignored.
+		if self.screen_descriptor.has_color_table() {
+			Some(self.screen_descriptor.background_color_index)
+		} else {
+			None
+		}
 	}
 
 	pub fn as_bytes(&self) -> Vec<u8> {

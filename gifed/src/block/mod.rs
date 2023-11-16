@@ -16,6 +16,7 @@ pub use version::Version;
 use self::extension::Application;
 use self::extension::GraphicControl;
 
+#[derive(Clone, Debug)]
 pub enum Block {
 	CompressedImage(CompressedImage),
 	//TODO: Extension(Extension),
@@ -26,6 +27,7 @@ pub enum Block {
 	LoopingExtension(LoopCount),
 }
 
+#[derive(Clone, Debug)]
 pub enum LoopCount {
 	Forever,
 	Number(u16),

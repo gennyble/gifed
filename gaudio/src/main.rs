@@ -5,4 +5,5 @@ fn main() {
 	let data = std::fs::read(file).unwrap();
 	let mut breaker = mp3::Breaker::new();
 	breaker.split(data).unwrap();
+	println!("{} frames", breaker.frames.len());
 }
