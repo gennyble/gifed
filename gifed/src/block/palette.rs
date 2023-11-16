@@ -35,10 +35,14 @@ impl Palette {
 		self.table.len()
 	}
 
+	pub fn is_empty(&self) -> bool {
+		self.len() > 0
+	}
+
 	/// Returns the number of items that the decoder *thinks* is in the palette.
 	/// This is 2^(n + 1) where n = [Palette::packed_len]
 	pub fn computed_len(&self) -> usize {
-		2usize.pow(self.packed_len() as u32 + 1)
+		1 << (self.packed_len() + 1)
 	}
 
 	/// Pushes a color on to the end of the table
@@ -47,7 +51,7 @@ impl Palette {
 	}
 
 	pub fn get(&self, index: u8) -> Option<Color> {
-		self.table.get(index as usize).map(|v| v.clone())
+		self.table.get(index as usize).copied()
 	}
 
 	pub fn from_color<C: AsRef<Color>>(&self, color: C) -> Option<u8> {
@@ -64,7 +68,7 @@ impl Palette {
 	//TODO: gen- better docs
 	pub fn padding(&self) -> usize {
 		let comp = self.computed_len();
-		(comp as usize - self.len()) * 3
+		(comp - self.len()) * 3
 	}
 
 	pub fn as_bytes(&self) -> Vec<u8> {
@@ -74,6 +78,12 @@ impl Palette {
 		}
 
 		bytes
+	}
+}
+
+impl Default for Palette {
+	fn default() -> Self {
+		Self::new()
 	}
 }
 
@@ -97,7 +107,7 @@ impl TryFrom<&[u8]> for Palette {
 
 	fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
 		if value.len() % 3 != 0 {
-			return Err(());
+			Err(())
 		} else {
 			Ok(Self {
 				table: value

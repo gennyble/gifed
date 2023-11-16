@@ -1,2 +1,3 @@
 [workspace]
 members = ["gifed", "gifprobe", "gaudio", "gifcheck"]
+resolver = "2"
