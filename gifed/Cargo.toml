@@ -11,5 +11,8 @@ repository = "https://github.com/genuinebyte/gifed"
 bitvec = "1.0.1"
 weezl = "0.1.5"
 
+[features]
+weezl-encode = []
+
 [dev-dependencies]
 rand = "0.8.5"

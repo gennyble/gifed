@@ -1,5 +1,3 @@
-use weezl::{encode::Encoder, LzwError};
-
 use crate::{reader::DecodeError, EncodeError};
 
 use super::{ImageDescriptor, Palette};
@@ -34,14 +32,9 @@ impl IndexedImage {
 
 	/// The `lzw_code_size` should be None if there is a local color table present. If
 	/// this image is using the Global Color Table, you must provide an
-	/// LZW Minimum Code Size here. It is equal to the value of [Palette::packed_len] + 1, but
-	/// must also be at least 2.
+	/// LZW Minimum Code Size here. It is equal to the value of [Palette::packed_len] + 1 but
+	/// must be at least 2.
 	pub fn compress(self, lzw_code_size: Option<u8>) -> Result<CompressedImage, EncodeError> {
-		// gen- The old code had a +1 here. Why?
-		// In the spec, under the section for the Logical Screen Descriptor, it
-		// mentions that the size in the packed field is calculated with
-		// 2 ^ (packed + 1) and the code size is supposed to be the "number
-		// of color bits", which I guess is the exponent?
 		let mcs = match self.local_color_table.as_ref() {
 			Some(palette) => palette.lzw_code_size(),
 			None => match lzw_code_size {
@@ -50,8 +43,10 @@ impl IndexedImage {
 			},
 		};
 
-		//FIXME: gen- This seems  broken
-		//let compressed = crate::LZW::encode(mcs, &self.indicies);
+		#[cfg(not(feature = "weezl-encode"))]
+		let compressed = crate::LZW::new(mcs).encode(&self.indicies);
+
+		#[cfg(feature = "weezl-encode")]
 		let compressed = Encoder::new(weezl::BitOrder::Lsb, mcs)
 			.encode(&self.indicies)
 			.unwrap();
@@ -130,18 +125,9 @@ impl CompressedImage {
 		} = self;
 
 		let data: Vec<u8> = blocks.into_iter().flat_map(<_>::into_iter).collect();
-
-		println!("lzw: {lzw_code_size}");
-
-		if local_color_table.is_some() {
-			let lct = local_color_table.as_ref().unwrap();
-			println!("lct-lzw: {}", lct.lzw_code_size());
-		}
-
-		//TODO: remove unwrap
 		let mut decompressor = weezl::decode::Decoder::new(weezl::BitOrder::Lsb, lzw_code_size);
 		let indicies = match decompressor.decode(&data) {
-			Err(LzwError::InvalidCode) => Err(DecodeError::LzwInvalidCode),
+			Err(weezl::LzwError::InvalidCode) => Err(DecodeError::LzwInvalidCode),
 			Ok(o) => Ok(o),
 		}?;
 
