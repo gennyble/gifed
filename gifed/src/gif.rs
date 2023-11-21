@@ -1,40 +1,50 @@
 use std::{fs::File, io::Write, path::Path, time::Duration};
 
-use crate::{
-	block::{
-		encode_block,
-		extension::{DisposalMethod, GraphicControl},
-		Block, CompressedImage, IndexedImage, Palette, ScreenDescriptor, Version,
-	},
-	writer::GifBuilder,
+use crate::block::{
+	encode_block,
+	extension::{DisposalMethod, GraphicControl},
+	Block, CompressedImage, IndexedImage, Palette, ScreenDescriptor, Version,
 };
 
 #[derive(Clone, Debug)]
 pub struct Gif {
-	pub header: Version,
-	pub screen_descriptor: ScreenDescriptor,
-	pub global_color_table: Option<Palette>,
+	/// Usually [Version::Gif89a], but might be [Version::Gif87a] for very
+	/// simple images.
+	pub version: Version,
+	pub descriptor: ScreenDescriptor,
+	pub palette: Option<Palette>,
 	pub blocks: Vec<Block>, // Trailer at the end of this struct is 0x3B //
 }
 
 impl Gif {
-	pub fn builder(width: u16, height: u16) -> GifBuilder {
-		GifBuilder::new(width, height)
+	pub fn set_width(&mut self, width: u16) {
+		self.descriptor.width = width;
 	}
 
-	pub fn width(&self) -> usize {
-		self.screen_descriptor.width as usize
+	pub fn width(&self) -> u16 {
+		self.descriptor.width
 	}
 
-	pub fn height(&self) -> usize {
-		self.screen_descriptor.height as usize
+	pub fn set_height(&mut self, height: u16) {
+		self.descriptor.height = height;
+	}
+
+	pub fn height(&self) -> u16 {
+		self.descriptor.height
+	}
+
+	pub fn set_background_color(&mut self, idx: u8) {
+		self.descriptor.background_color_index = idx;
 	}
 
 	pub fn background_color(&self) -> Option<u8> {
-		// vii) Background Color Index - If the Global Color Table Flag is set
-		// to (zero), this field should be zero and should be ignored.
-		if self.screen_descriptor.has_color_table() {
-			Some(self.screen_descriptor.background_color_index)
+		// vii) Background Color Index - Index into the Global Color Table for
+		// the Background Color. The Background Color is the color used for
+		// those pixels on the screen that are not covered by an image. If the
+		// Global Color Table Flag is set to (zero), this field should be zero
+		// and should be ignored.
+		if self.descriptor.has_color_table() {
+			Some(self.descriptor.background_color_index)
 		} else {
 			None
 		}
@@ -43,10 +53,10 @@ impl Gif {
 	pub fn as_bytes(&self) -> Vec<u8> {
 		let mut out = vec![];
 
-		out.extend_from_slice(self.header.as_bytes());
-		out.extend_from_slice(&self.screen_descriptor.as_bytes());
+		out.extend_from_slice(self.version.as_bytes());
+		out.extend_from_slice(&self.descriptor.as_bytes());
 
-		if let Some(gct) = &self.global_color_table {
+		if let Some(gct) = &self.palette {
 			out.extend_from_slice(&gct.as_bytes());
 		}
 
@@ -64,6 +74,7 @@ impl Gif {
 		File::create(path.as_ref())?.write_all(&self.as_bytes())
 	}
 
+	/// An iterator over the discrete images in the gif.
 	pub fn images(&self) -> ImageIterator<'_> {
 		ImageIterator {
 			gif: self,
@@ -97,7 +108,7 @@ impl<'a> Iterator for ImageIterator<'a> {
 
 		Some(Image {
 			compressed: img,
-			global_palette: self.gif.global_color_table.as_ref(),
+			global_palette: self.gif.palette.as_ref(),
 			blocks: &self.gif.blocks[starting_block..self.block_index],
 		})
 	}
@@ -169,11 +180,14 @@ impl<'a> Image<'a> {
 		if let Some(plt) = self.compressed.local_color_table.as_ref() {
 			plt
 		} else {
-			//FIXME: Maybe don't panic here
+			//FIXME: Maybe don't panic here.
+			// images can lack a palette entirely. in that case it's up to the
+			// decoder to pick one.
 			self.global_palette.unwrap()
 		}
 	}
 
+	/// Make a tRNS block for PNG files.
 	pub fn png_trns(&self) -> Option<Vec<u8>> {
 		let palette = self.palette();
 		if let Some(trans_idx) = self.transparent_index() {
@@ -195,7 +209,7 @@ impl<'a> Image<'a> {
 
 	/// Clones the CompressedImage and decompresses it.
 	pub fn decompess(&self) -> IndexedImage {
-		//FIXME: unwrap
+		//FIXME: remove unwrap
 		self.compressed.clone().decompress().unwrap()
 	}
 }
@@ -204,138 +218,4 @@ pub enum FrameControl {
 	Delay(Duration),
 	Input,
 	InputOrDelay(Duration),
-}
-
-#[cfg(test)]
-pub mod gif_test {
-	use std::convert::TryInto;
-	use std::io::Write;
-
-	use crate::block::extension::DisposalMethod;
-	use crate::writer::{GifBuilder, ImageBuilder};
-	use crate::Color;
-
-	#[test]
-	fn to_vec_gif87a() {
-		let gct = vec![Color::new(1, 2, 3), Color::new(253, 254, 255)];
-		let colortable = vec![Color::new(0, 0, 0), Color::new(128, 0, 255)];
-		let indicies = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0];
-
-		let expected_out = vec![
-			0x47,
-			0x49,
-			0x46,
-			0x38,
-			0x37,
-			0x61, // Version - GIF87a
-			0x04,
-			0x00,
-			0x04,
-			0x00,
-			0b1000_0000,
-			0x00,
-			0x00, // Logical Screen Descriptor
-			1,
-			2,
-			3,
-			253,
-			254,
-			255, // Global Color Table
-			0x2C,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x04,
-			0x00,
-			0x04,
-			0x00,
-			0b1000_0000, // Image Descriptor 1
-			0,
-			0,
-			0,
-			128,
-			0,
-			255, // Color Table
-			0x02,
-			0x05,
-			0x84,
-			0x1D,
-			0x81,
-			0x7A,
-			0x50,
-			0x00, // Image Data 1
-			0x2C,
-			0x00,
-			0x00,
-			0x00,
-			0x00,
-			0x04,
-			0x00,
-			0x04,
-			0x00,
-			0b0000_0000, // Image Descriptor 2
-			0x02,
-			0x05,
-			0x84,
-			0x1D,
-			0x81,
-			0x7A,
-			0x50,
-			0x00, // Image Data 2
-			0x3B, // Trailer
-		];
-
-		let actual = GifBuilder::new(4, 4)
-			.palette(gct.try_into().unwrap())
-			.image(
-				ImageBuilder::new(4, 4)
-					.palette(colortable.try_into().unwrap())
-					.build(indicies.clone())
-					.unwrap(),
-			)
-			.image(ImageBuilder::new(4, 4).build(indicies).unwrap());
-
-		let bytes = actual.build().unwrap().as_bytes();
-		assert_eq!(bytes, expected_out);
-	}
-
-	#[test]
-	fn to_vec_gif89a() {
-		let gct = vec![Color::new(1, 2, 3), Color::new(253, 254, 255)];
-		let colortable = vec![Color::new(0, 0, 0), Color::new(128, 0, 255)];
-		let indicies = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0];
-
-		let expected_out = vec![
-			71, 73, 70, 56, 57, 97, 4, 0, 4, 0, 128, 0, 0, 1, 2, 3, 253, 254, 255, 33, 249, 4, 8,
-			64, 0, 0, 0, 44, 0, 0, 0, 0, 4, 0, 4, 0, 128, 0, 0, 0, 128, 0, 255, 2, 5, 132, 29, 129,
-			122, 80, 0, 44, 0, 0, 0, 0, 4, 0, 4, 0, 0, 2, 5, 132, 29, 129, 122, 80, 0, 59,
-		];
-
-		let actual_out = GifBuilder::new(4, 4)
-			.palette(gct.try_into().unwrap())
-			.image(
-				ImageBuilder::new(4, 4)
-					.palette(colortable.try_into().unwrap())
-					.disposal_method(DisposalMethod::RestoreBackground)
-					.delay(64)
-					.build(indicies.clone())
-					.unwrap(),
-			)
-			.image(ImageBuilder::new(4, 4).build(indicies).unwrap())
-			.build()
-			.unwrap()
-			.as_bytes();
-
-		std::fs::File::create("ah.gif")
-			.unwrap()
-			.write_all(&actual_out)
-			.unwrap();
-		std::fs::File::create("ah_hand.gif")
-			.unwrap()
-			.write_all(&expected_out)
-			.unwrap();
-
-		assert_eq!(actual_out, expected_out);
-	}
 }

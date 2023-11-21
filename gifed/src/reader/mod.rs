@@ -66,9 +66,9 @@ impl<R: Read> Decoder<R> {
 		}
 
 		Ok(Gif {
-			header: decoder.version,
-			screen_descriptor: decoder.screen_descriptor,
-			global_color_table: decoder.palette,
+			version: decoder.version,
+			descriptor: decoder.screen_descriptor,
+			palette: decoder.palette,
 			blocks,
 		})
 	}

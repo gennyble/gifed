@@ -1,14 +1,13 @@
-mod gifbuilder;
 mod imagebuilder;
 
 use std::{error::Error, fmt, io::Write};
 
-pub use gifbuilder::GifBuilder;
 pub use imagebuilder::{BuiltImage, ImageBuilder};
 
-use crate::block::{encode_block, Block, LoopCount, Palette, ScreenDescriptor, Version};
-
-use self::gifbuilder::EncodeImage;
+use crate::block::{
+	encode_block, Block, CompressedImage, IndexedImage, LoopCount, Palette, ScreenDescriptor,
+	Version,
+};
 
 pub struct Writer<W: Write> {
 	writer: W,
@@ -123,5 +122,29 @@ impl fmt::Display for EncodeError {
 impl From<std::io::Error> for EncodeError {
 	fn from(error: std::io::Error) -> Self {
 		EncodeError::IoError { error }
+	}
+}
+
+pub enum EncodeImage {
+	CompressedImage(CompressedImage),
+	IndexedImage(IndexedImage),
+	BuiltImage(BuiltImage),
+}
+
+impl From<CompressedImage> for EncodeImage {
+	fn from(ci: CompressedImage) -> Self {
+		EncodeImage::CompressedImage(ci)
+	}
+}
+
+impl From<IndexedImage> for EncodeImage {
+	fn from(ii: IndexedImage) -> Self {
+		EncodeImage::IndexedImage(ii)
+	}
+}
+
+impl From<BuiltImage> for EncodeImage {
+	fn from(bi: BuiltImage) -> Self {
+		EncodeImage::BuiltImage(bi)
 	}
 }
