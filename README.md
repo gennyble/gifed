@@ -1,19 +1,10 @@
 # gifed
 Gifed is a **GIF** **e**ncoding and **d**ecoding library.
 
-This crate is still pretty rough. I hope to make it feature complete and intuitive to use while still allowing fine grained control over the file itself, which has been and always will be, one of the main goals of this crate.
+This crate is getting somewhere! I hope to polish the API a touch and introduce an API for quantization.
 
 ### Gifed TODO
-- [x] Writing GIF87a
-- [x] Writing GIF89a
-- [x] Automatically select the lowest version possible when writing
-- [x] Read GIF87a
-- [x] Read GIF89a
-- [ ] Reader
-- [x] Streaming Reader
-- [x] Writer
-- [x] Streaming Writer
-- [ ] Feature to allow using the [weezl][weezl-crates] crate for LZW compression instead of the built-in
+- [x] Feature to allow using the [weezl][weezl-crates] crate for LZW compression instead of the built-in. *(works with compression! we still require weezl for decompression)*
 - [ ] Feature to allow using the [rgb][rgb-crates] crate for the color type.
 - [ ] Well written and easy to understand docs! `bitvec` quality, but who can match that?
 
