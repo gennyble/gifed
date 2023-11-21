@@ -1,6 +1,6 @@
 [package]
 name = "gifed"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["gennyble <gen@nyble.dev>"]
 edition = "2018"
 license = "ISC"
