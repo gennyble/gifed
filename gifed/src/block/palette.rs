@@ -15,15 +15,8 @@ impl Palette {
 		Self { table: vec![] }
 	}
 
-	//FIXME: gen- Second paragraph is incorrect
-	/// Returns the number of colors in the color table as used by the packed
-	/// fields in the Logical Screen Descriptor and Image Descriptor. You can
-	/// get the actual size with the [`len`](struct.ColorTable.html#method.len) method.
-	///
-	/// This value is equal to `log2([Palette::len]) - 1`. In other words, 2^(n + 1) will
-	/// give you the same value as [Palette::len]. (where `n` is the value returned)
 	pub fn packed_len(&self) -> u8 {
-		((self.table.len() as f32).log2().ceil() - 1f32) as u8
+		crate::color_table_len_to_packed(self.len())
 	}
 
 	pub fn lzw_code_size(&self) -> u8 {

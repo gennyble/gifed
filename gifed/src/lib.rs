@@ -19,6 +19,10 @@ pub(crate) fn packed_to_color_table_length(packed: u8) -> usize {
 	1 << (packed + 1)
 }
 
+pub(crate) fn color_table_len_to_packed(len: usize) -> u8 {
+	((len as f32).log2().ceil() - 1f32) as u8
+}
+
 //TODO: Be sure to check that fields in LSD and Img. Desc. that were reserved
 //in 87a aren't set if version is 87a, or that we return a warning, etc. Just
 //remember about this.

@@ -58,24 +58,20 @@ impl<W: Write> Writer<W> {
 			.map_err(|error| EncodeError::IoError { error })
 	}
 
-	pub fn block(&mut self, block: Block) -> Result<(), EncodeError> {
-		self.write_all(&encode_block(&block))
-	}
-
 	pub fn repeat(&mut self, count: LoopCount) -> Result<(), EncodeError> {
 		self.write_all(&encode_block(&Block::LoopingExtension(count)))
 	}
 
-	pub fn image<I: Into<EncodeImage>>(&mut self, image: I) -> Result<(), EncodeError> {
+	pub fn push<I: Into<EncodeBlock>>(&mut self, image: I) -> Result<(), EncodeError> {
 		match image.into() {
-			EncodeImage::CompressedImage(compressed) => self.write_all(&compressed.as_bytes()),
-			EncodeImage::IndexedImage(indexed) => {
+			EncodeBlock::CompressedImage(compressed) => self.write_all(&compressed.as_bytes()),
+			EncodeBlock::IndexedImage(indexed) => {
 				let lzw_code_size = self.global_palette.as_ref().map(|p| p.lzw_code_size());
 
 				let compressed = indexed.compress(lzw_code_size)?;
 				self.write_all(&compressed.as_bytes())
 			}
-			EncodeImage::BuiltImage(built) => {
+			EncodeBlock::BuiltImage(built) => {
 				if let Some(gce) = built.gce {
 					self.write_all(&encode_block(&Block::GraphicControlExtension(gce)))?;
 				}
@@ -85,6 +81,7 @@ impl<W: Write> Writer<W> {
 				let compressed = built.image.compress(lzw_code_size)?;
 				self.write_all(&compressed.as_bytes())
 			}
+			EncodeBlock::Block(block) => self.write_all(&encode_block(&block)),
 		}
 	}
 
@@ -125,26 +122,33 @@ impl From<std::io::Error> for EncodeError {
 	}
 }
 
-pub enum EncodeImage {
+pub enum EncodeBlock {
 	CompressedImage(CompressedImage),
 	IndexedImage(IndexedImage),
 	BuiltImage(BuiltImage),
+	Block(Block),
 }
 
-impl From<CompressedImage> for EncodeImage {
+impl From<CompressedImage> for EncodeBlock {
 	fn from(ci: CompressedImage) -> Self {
-		EncodeImage::CompressedImage(ci)
+		EncodeBlock::CompressedImage(ci)
 	}
 }
 
-impl From<IndexedImage> for EncodeImage {
+impl From<IndexedImage> for EncodeBlock {
 	fn from(ii: IndexedImage) -> Self {
-		EncodeImage::IndexedImage(ii)
+		EncodeBlock::IndexedImage(ii)
 	}
 }
 
-impl From<BuiltImage> for EncodeImage {
+impl From<BuiltImage> for EncodeBlock {
 	fn from(bi: BuiltImage) -> Self {
-		EncodeImage::BuiltImage(bi)
+		EncodeBlock::BuiltImage(bi)
+	}
+}
+
+impl<T: Into<Block>> From<T> for EncodeBlock {
+	fn from(ib: T) -> Self {
+		EncodeBlock::Block(ib.into())
 	}
 }

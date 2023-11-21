@@ -1,9 +1,13 @@
 use std::{fs::File, io::Write, path::Path, time::Duration};
 
-use crate::block::{
-	encode_block,
-	extension::{DisposalMethod, GraphicControl},
-	Block, CompressedImage, IndexedImage, Palette, ScreenDescriptor, Version,
+use crate::{
+	block::{
+		encode_block,
+		extension::{DisposalMethod, GraphicControl},
+		Block, CompressedImage, IndexedImage, Palette, ScreenDescriptor, Version,
+	},
+	writer::EncodeBlock,
+	EncodeError,
 };
 
 #[derive(Clone, Debug)]
@@ -72,6 +76,26 @@ impl Gif {
 
 	pub fn save<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
 		File::create(path.as_ref())?.write_all(&self.as_bytes())
+	}
+
+	pub fn push<I: Into<EncodeBlock>>(&mut self, image: I) {
+		match image.into() {
+			EncodeBlock::Block(block) => self.blocks.push(block),
+			EncodeBlock::CompressedImage(ci) => self.blocks.push(Block::CompressedImage(ci)),
+			EncodeBlock::IndexedImage(indexed) => {
+				let lzw_code_size = self.palette.as_ref().map(|p| p.lzw_code_size());
+
+				//TODO: remove unwrap
+				let compressed = indexed.compress(lzw_code_size).unwrap();
+				self.blocks.push(Block::CompressedImage(compressed));
+			}
+			EncodeBlock::BuiltImage(built) => {
+				if let Some(gce) = built.gce {
+					self.push(gce);
+				}
+				self.push(built.image)
+			}
+		}
 	}
 
 	/// An iterator over the discrete images in the gif.

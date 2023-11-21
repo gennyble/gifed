@@ -102,3 +102,21 @@ fn encode_extension(block: &Block) -> Vec<u8> {
 
 	vec
 }
+
+impl From<GraphicControl> for Block {
+	fn from(gce: GraphicControl) -> Self {
+		Block::GraphicControlExtension(gce)
+	}
+}
+
+impl From<Application> for Block {
+	fn from(app: Application) -> Self {
+		Block::ApplicationExtension(app)
+	}
+}
+
+impl From<LoopCount> for Block {
+	fn from(count: LoopCount) -> Self {
+		Block::LoopingExtension(count)
+	}
+}
