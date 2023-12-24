@@ -1,10 +1,10 @@
 use std::convert::TryFrom;
 
 #[cfg(feature = "colorsquash")]
-use colorsquash::{Squasher, SquasherBuilder};
+use colorsquash::Squasher;
 
 use crate::{
-	block::{packed::ScreenPacked, Palette, ScreenDescriptor, Version},
+	block::{Palette, ScreenDescriptor, Version},
 	writer::ImageBuilder,
 	Color, Gif,
 };
@@ -111,14 +111,18 @@ impl From<Vec<Vec<Color>>> for Frame {
 impl Frame {
 	#[cfg(feature = "colorsquash")]
 	pub fn optimize_palette(&mut self) {
+		#[cfg(feature = "rgb")]
+		let image_bytes = self.image.clone().into_iter().flatten().collect::<Vec<_>>();
+		#[cfg(not(feature = "rgb"))]
 		let image_bytes = self
 			.image
 			.iter()
 			.flat_map(|row| row.iter().flat_map(|color| [color.r, color.g, color.b]))
 			.collect::<Vec<_>>();
-		let squasher = SquasherBuilder::default()
-			.max_colors(255u8)
-			.build(image_bytes.as_slice());
+		#[cfg(feature = "rgb")]
+		let squasher = Squasher::new(255u8, image_bytes.as_slice());
+		#[cfg(not(feature = "rgb"))]
+		let squasher = Squasher::new_raw(255u8, image_bytes.as_slice());
 		let pal = Palette::try_from(squasher.palette_bytes().as_slice()).unwrap();
 		self.set_palette(pal)
 	}

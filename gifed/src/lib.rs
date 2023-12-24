@@ -1,4 +1,3 @@
-mod color;
 mod gif;
 mod lzw;
 
@@ -10,9 +9,15 @@ pub mod writer;
 pub use reader::DecodeError;
 pub use writer::EncodeError;
 
-pub use color::Color;
 pub use gif::{Gif, Image};
 pub use lzw::LZW;
+
+#[cfg(feature = "rgb")]
+pub type Color = rgb::RGB8;
+#[cfg(not(feature = "rgb"))]
+mod color;
+#[cfg(not(feature = "rgb"))]
+pub use color::Color;
 
 /// Perform the algorithm to get the length of a color table from
 /// the value of the packed field. The max value here is 256

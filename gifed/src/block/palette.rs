@@ -48,9 +48,9 @@ impl Palette {
 		self.table.get(index as usize).copied()
 	}
 
-	pub fn from_color<C: AsRef<Color>>(&self, color: C) -> Option<u8> {
+	pub fn from_color(&self, color: Color) -> Option<u8> {
 		for (i, &c) in self.table.iter().enumerate() {
-			if c == *color.as_ref() {
+			if c == color {
 				return Some(i as u8);
 			}
 		}
@@ -201,7 +201,7 @@ mod test {
 
 	fn test_n_with_padding_range(real_count_low: u8, real_count_high: u8, next_padstop: usize) {
 		for x in real_count_low..=real_count_high {
-			test_n_with_padding(x as usize, (next_padstop as usize - x as usize) * 3)
+			test_n_with_padding(x as usize, (next_padstop - x as usize) * 3)
 		}
 	}
 
