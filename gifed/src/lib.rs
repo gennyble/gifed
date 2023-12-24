@@ -3,6 +3,7 @@ mod gif;
 mod lzw;
 
 pub mod block;
+pub mod gif_builder;
 pub mod reader;
 pub mod writer;
 
