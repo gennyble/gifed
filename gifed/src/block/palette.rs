@@ -179,7 +179,7 @@ mod test {
 		vec_tuple_test(vec![(1, 2, 3), (4, 5, 6)], &[1, 2, 3, 4, 5, 6])
 	}
 
-	fn test_n_with_padding(real_count: usize, exected_padding_bytes: usize) {
+	fn test_n_with_padding(real_count: usize, expected_padding_bytes: usize) {
 		let mut palette = Palette::new();
 		let mut expected = vec![];
 
@@ -189,11 +189,7 @@ mod test {
 			expected.extend_from_slice(&[x, x, x])
 		}
 
-		// yes, this is really how I'm doing it. I have... trust issues with
-		// myself and iter::repeat. i hope you understand
-		for _ in 0..exected_padding_bytes {
-			expected.push(0x00);
-		}
+		expected.resize(expected.len() + expected_padding_bytes, 0x00);
 
 		let bytes = palette.as_bytes();
 		assert_eq!(expected, bytes.as_slice())

@@ -7,7 +7,6 @@ use crate::{
 		Block, CompressedImage, IndexedImage, Palette, ScreenDescriptor, Version,
 	},
 	writer::EncodeBlock,
-	EncodeError,
 };
 
 #[derive(Clone, Debug)]

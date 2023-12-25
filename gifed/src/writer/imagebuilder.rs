@@ -44,9 +44,9 @@ impl ImageBuilder {
 		self
 	}
 
-	/// Time to wait, in hundreths of a second, before this image is drawn
-	pub fn delay(mut self, hundreths: u16) -> Self {
-		self.delay = hundreths;
+	/// Time to wait, in hundredths of a second, before this image is drawn
+	pub fn delay(mut self, hundredths: u16) -> Self {
+		self.delay = hundredths;
 		self
 	}
 
