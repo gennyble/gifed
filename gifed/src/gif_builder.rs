@@ -6,13 +6,14 @@ use colorsquash::Squasher;
 use crate::{
 	block::{Palette, ScreenDescriptor, Version},
 	writer::ImageBuilder,
-	Color, Gif,
+	Color, EncodeError, Gif,
 };
 
 pub struct GifBuilder {
 	width: u16,
 	height: u16,
 	framerate: Option<u16>,
+	global_palette: Option<Palette>,
 	frames: Vec<Frame>,
 }
 
@@ -27,19 +28,23 @@ impl GifBuilder {
 	pub fn add_frame(&mut self, frame: Frame) {
 		self.frames.push(frame)
 	}
-	pub fn build(self) -> Gif {
+	pub fn add_global_palette(&mut self, palette: Palette) {
+		self.global_palette = Some(palette)
+	}
+	pub fn build(self) -> Result<Gif, EncodeError> {
 		let Self {
 			width,
 			height,
 			framerate,
 			frames,
+			global_palette,
 		} = self;
 
 		let descriptor = ScreenDescriptor::new(width, height);
 		let mut gif = Gif {
 			version: Version::Gif89a,
 			descriptor,
-			palette: None,
+			palette: global_palette,
 			blocks: vec![],
 		};
 
@@ -50,33 +55,37 @@ impl GifBuilder {
 				palette,
 			} = frame;
 
-			let palette = palette.unwrap();
 			let delay = interval
 				.map(|interval| interval * 10)
 				.or(framerate.map(|fr| 100 / fr))
 				.unwrap_or(10);
-			let image_bytes = image
+			let image_indicies = image
 				.into_iter()
 				.flat_map(|row| {
 					row.into_iter().map(|c| {
+						//if there is a palette for this frame, use that to encode the
 						palette
-							.from_color(c)
-							.expect("palette should be able to convert any color")
+							.or(global_palette)
+							.map(|p| p.from_color(c)) //TODO: this is wrong. don't do this
+							.flatten()
 					})
 				})
 				.collect::<Vec<_>>();
-			let ib = ImageBuilder::new(width, height)
-				.delay(delay)
-				.build(image_bytes)
-				.expect("image building should succeed");
-			ib.image.compress(None).expect("compression should succeed")
+			let mut ib = ImageBuilder::new(width, height).delay(delay);
+			if let Some(p) = palette {
+				ib = ib.palette(p);
+			}
+			ib.build(image_indicies)?.image.compress(None)
 		});
 
 		for compressed_image in images {
-			gif.push(compressed_image);
+			match compressed_image {
+				Ok(img) => gif.push(img),
+				Err(e) => return Err(e),
+			}
 		}
 
-		gif
+		Ok(gif)
 	}
 }
 
