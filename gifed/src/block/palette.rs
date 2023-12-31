@@ -49,12 +49,11 @@ impl Palette {
 	}
 
 	pub fn from_color(&self, color: Color) -> Option<u8> {
-		for (i, &c) in self.table.iter().enumerate() {
-			if c == color {
-				return Some(i as u8);
-			}
-		}
-		None
+		self.table
+			.iter()
+			.enumerate()
+			.find(|(i, c)| **c == color)
+			.map(|(i, c)| i as u8)
 	}
 
 	/// How many padding bytes we need to write.
