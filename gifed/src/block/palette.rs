@@ -52,8 +52,8 @@ impl Palette {
 		self.table
 			.iter()
 			.enumerate()
-			.find(|(i, c)| **c == color)
-			.map(|(i, c)| i as u8)
+			.find(|(_, c)| **c == color)
+			.map(|(i, _)| i as u8)
 	}
 
 	/// How many padding bytes we need to write.
