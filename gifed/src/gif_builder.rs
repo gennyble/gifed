@@ -5,7 +5,7 @@ use crate::{
 };
 
 use colorsquash::Squasher;
-use rgb::{ComponentBytes, RGB8};
+use rgb::RGB8;
 
 use std::convert::TryFrom;
 
@@ -106,7 +106,7 @@ impl From<Vec<Vec<RGB8>>> for Frame {
 		let squasher = Squasher::new(255u8, flat.as_slice());
 
 		let mut image_indices = vec![0; flat.len()];
-		squasher.map_unsafe(flat.as_bytes(), &mut image_indices);
+		squasher.map_unsafe(flat.as_slice(), &mut image_indices);
 		let palette = Palette::try_from(squasher.palette_bytes().as_slice()).unwrap();
 		Self {
 			image_indices,

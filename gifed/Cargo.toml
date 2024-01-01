@@ -1,8 +1,8 @@
 [package]
 name = "gifed"
 version = "0.3.0"
-authors = ["gennyble <gen@nyble.dev>"]
-edition = "2018"
+authors = ["gennyble <gen@nyble.dev>", "novedevo <devon@nove.dev>"]
+edition = "2021"
 license = "ISC"
 description = "Gif encoding and decoding with fine control"
 repository = "https://github.com/genuinebyte/gifed"
@@ -10,7 +10,7 @@ repository = "https://github.com/genuinebyte/gifed"
 [dependencies]
 bitvec = "1.0.1"
 colorsquash = { git = "https://github.com/novedevo/colorsquash", version = "0.2.0", optional = true }
-rgb = {version="0.8.37", optional=true}
+rgb = {version="0.8", optional = true}
 weezl = "0.1.5"
 
 [features]
