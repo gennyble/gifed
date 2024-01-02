@@ -47,7 +47,7 @@ impl IndexedImage {
 		let compressed = crate::LZW::new(mcs).encode(&self.indicies);
 
 		#[cfg(feature = "weezl-encode")]
-		let compressed = Encoder::new(weezl::BitOrder::Lsb, mcs)
+		let compressed = weezl::encode::Encoder::new(weezl::BitOrder::Lsb, mcs)
 			.encode(&self.indicies)
 			.unwrap();
 

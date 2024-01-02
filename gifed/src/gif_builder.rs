@@ -4,8 +4,8 @@ use crate::{
 	EncodeError, Gif,
 };
 
-use colorsquash::Squasher;
-use rgb::RGB8;
+use color_quant::NeuQuant;
+use rgb::{ComponentBytes, FromSlice, RGB8};
 
 use std::convert::TryFrom;
 
@@ -56,15 +56,13 @@ impl GifBuilder {
 			} = frame;
 
 			let delay = interval
-				.map(|interval| interval * 10)
+				.map(|interval| interval)
 				.or(framerate.map(|fr| 100 / fr))
 				.unwrap_or(10);
 			ImageBuilder::new(width, height)
 				.delay(delay)
 				.palette(palette)
-				.build(image_indices)?
-				.image
-				.compress(None)
+				.build(image_indices)
 		});
 
 		for compressed_image in images {
@@ -103,13 +101,19 @@ impl From<Vec<Vec<RGB8>>> for Frame {
 	fn from(image: Vec<Vec<RGB8>>) -> Self {
 		let flat = image.concat();
 
-		let squasher = Squasher::new(255u8, flat.as_slice());
+		let flat_rgba = flat.as_rgba();
+		let quant = NeuQuant::new(1, 256, &flat_rgba.as_bytes());
 
-		let mut image_indices = vec![0; flat.len()];
-		squasher.map_unsafe(flat.as_slice(), &mut image_indices);
-		let palette = Palette::try_from(squasher.palette_bytes().as_slice()).unwrap();
+		let mut indicies = vec![0; flat.len()];
+		for (image_idx, px) in flat.iter().enumerate() {
+			let color_idx = quant.index_of(&[px.r, px.g, px.b, 255]);
+			indicies[image_idx] = color_idx as u8;
+		}
+
+		let palette = Palette::try_from(quant.color_map_rgb().as_slice()).unwrap();
+
 		Self {
-			image_indices,
+			image_indices: indicies,
 			interval: None,
 			palette,
 		}
