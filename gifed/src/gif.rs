@@ -20,6 +20,16 @@ pub struct Gif {
 }
 
 impl Gif {
+	pub fn new(width: u16, height: u16) -> Self {
+		Self {
+			//TODO: gen- select lower when possible
+			version: Version::Gif89a,
+			descriptor: ScreenDescriptor::new(width, height),
+			palette: None,
+			blocks: vec![],
+		}
+	}
+
 	pub fn set_width(&mut self, width: u16) {
 		self.descriptor.width = width;
 	}

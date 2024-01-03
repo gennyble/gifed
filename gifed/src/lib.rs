@@ -2,7 +2,7 @@ mod gif;
 mod lzw;
 
 pub mod block;
-#[cfg(all(feature = "rgb"))]
+#[cfg(feature = "videoish")]
 pub mod gif_builder;
 pub mod reader;
 pub mod writer;

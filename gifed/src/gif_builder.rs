@@ -1,90 +1,59 @@
-use crate::{
-	block::{Palette, ScreenDescriptor, Version},
-	writer::ImageBuilder,
-	EncodeError, Gif,
-};
+use crate::{block::Palette, writer::ImageBuilder, Color, EncodeError, Gif};
 
 use color_quant::NeuQuant;
-use rgb::{ComponentBytes, FromSlice, RGB8};
+use rgb::{ComponentBytes, FromSlice};
 
 use std::convert::TryFrom;
 
-pub struct GifBuilder {
+pub struct VideoGif {
 	width: u16,
 	height: u16,
 	framerate: Option<u16>,
-	global_palette: Option<Palette>,
 	frames: Vec<Frame>,
 }
 
-impl GifBuilder {
-	pub fn set_resolution(&mut self, width: u16, height: u16) {
-		self.width = width;
-		self.height = height;
-	}
-	pub fn set_framerate(&mut self, framerate: u16) {
-		self.framerate = Some(framerate)
-	}
-	pub fn add_frame(&mut self, frame: Frame) {
-		self.frames.push(frame)
-	}
-	pub fn add_global_palette(&mut self, palette: Palette) {
-		self.global_palette = Some(palette)
-	}
-	pub fn build(self) -> Result<Gif, EncodeError> {
-		let Self {
+impl VideoGif {
+	pub fn new(width: u16, height: u16) -> Self {
+		Self {
 			width,
 			height,
-			framerate,
-			frames,
-			global_palette,
-		} = self;
+			framerate: None,
+			frames: vec![],
+		}
+	}
 
-		let descriptor = ScreenDescriptor::new(width, height);
-		let mut gif = Gif {
-			version: Version::Gif89a,
-			descriptor,
-			palette: global_palette,
-			blocks: vec![],
-		};
+	/// Set the approximate frames per second.
+	///
+	/// This struct uses a constant framerate and is only precise to hundreths
+	/// of a second, so you might not get exactly what you want.
+	pub fn set_framerate(&mut self, framerate: u16) {
+		self.framerate = Some(100 / framerate);
+	}
 
-		let images = frames.into_iter().map(|frame| {
-			let Frame {
-				interval,
-				image_indices,
-				palette,
-			} = frame;
+	pub fn add_frame<F: Into<Frame>>(&mut self, frame: F) {
+		self.frames.push(frame.into())
+	}
 
-			let delay = interval
-				.map(|interval| interval)
-				.or(framerate.map(|fr| 100 / fr))
-				.unwrap_or(10);
-			ImageBuilder::new(width, height)
-				.delay(delay)
-				.palette(palette)
-				.build(image_indices)
-		});
+	#[rustfmt::skip] // it was doing things i did not like
+	pub fn build(self) -> Result<Gif, EncodeError> {
+		let Self { width, height, framerate, frames } = self;
 
-		for compressed_image in images {
-			match compressed_image {
-				Ok(img) => gif.push(img),
-				Err(e) => return Err(e),
-			}
+		let mut gif = Gif::new(width, height);
+
+		for Frame { image_indices, interval, palette } in frames {
+			//TODO: return error instead of defaulting to 10? or print warning?
+			// printing in a library is bad but perhaps so is assuming 10 fps?
+			let delay = interval.or(framerate).unwrap_or(10);
+
+			gif.push(
+				ImageBuilder::new(width, height)
+					.delay(delay)
+					.palette(palette)
+					.build(image_indices)?,
+			)
 		}
 
 		Ok(gif)
-	}
-}
-
-impl Default for GifBuilder {
-	fn default() -> Self {
-		Self {
-			width: 256,
-			height: 256,
-			framerate: Some(15),
-			frames: vec![],
-			global_palette: None,
-		}
 	}
 }
 
@@ -96,13 +65,10 @@ pub struct Frame {
 	palette: Palette,
 }
 
-impl From<Vec<Vec<RGB8>>> for Frame {
-	/// image: row-major ordering
-	fn from(image: Vec<Vec<RGB8>>) -> Self {
-		let flat = image.concat();
-
+impl From<&[Color]> for Frame {
+	fn from(flat: &[Color]) -> Self {
 		let flat_rgba = flat.as_rgba();
-		let quant = NeuQuant::new(1, 256, &flat_rgba.as_bytes());
+		let quant = NeuQuant::new(1, 256, flat_rgba.as_bytes());
 
 		let mut indicies = vec![0; flat.len()];
 		for (image_idx, px) in flat.iter().enumerate() {
@@ -120,8 +86,16 @@ impl From<Vec<Vec<RGB8>>> for Frame {
 	}
 }
 
+impl From<(&[Color], u16)> for Frame {
+	fn from(image_delay: (&[Color], u16)) -> Self {
+		let (flat, delay) = image_delay;
+		let mut this: Frame = flat.into();
+		this.interval = Some(delay);
+		this
+	}
+}
+
 impl Frame {
-	///
 	pub fn set_interval(&mut self, interval_hundredths: u16) {
 		self.interval = Some(interval_hundredths);
 	}
