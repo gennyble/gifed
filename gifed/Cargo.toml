@@ -1,8 +1,8 @@
 [package]
 name = "gifed"
 version = "0.3.0"
-authors = ["gennyble <gen@nyble.dev>"]
-edition = "2018"
+authors = ["gennyble <gen@nyble.dev>", "novedevo <devon@nove.dev>"]
+edition = "2021"
 license = "ISC"
 description = "Gif encoding and decoding with fine control"
 repository = "https://github.com/genuinebyte/gifed"
@@ -11,8 +11,13 @@ repository = "https://github.com/genuinebyte/gifed"
 bitvec = "1.0.1"
 weezl = "0.1.5"
 
+color_quant = { version = "1.1.0", optional = true }
+rgb = { version = "0.8", optional = true }
+
 [features]
 weezl-encode = []
+videoish = ["color_quant", "rgb"]
+default = []
 
 [dev-dependencies]
 rand = "0.8.5"

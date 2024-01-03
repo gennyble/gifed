@@ -48,13 +48,11 @@ impl Palette {
 		self.table.get(index as usize).copied()
 	}
 
-	pub fn from_color<C: AsRef<Color>>(&self, color: C) -> Option<u8> {
-		for (i, &c) in self.table.iter().enumerate() {
-			if c == *color.as_ref() {
-				return Some(i as u8);
-			}
-		}
-		None
+	pub fn from_color(&self, color: Color) -> Option<u8> {
+		self.table
+			.iter()
+			.position(|c| *c == color)
+			.map(|idx| idx as u8)
 	}
 
 	/// How many padding bytes we need to write.
@@ -179,7 +177,7 @@ mod test {
 		vec_tuple_test(vec![(1, 2, 3), (4, 5, 6)], &[1, 2, 3, 4, 5, 6])
 	}
 
-	fn test_n_with_padding(real_count: usize, exected_padding_bytes: usize) {
+	fn test_n_with_padding(real_count: usize, expected_padding_bytes: usize) {
 		let mut palette = Palette::new();
 		let mut expected = vec![];
 
@@ -189,11 +187,7 @@ mod test {
 			expected.extend_from_slice(&[x, x, x])
 		}
 
-		// yes, this is really how I'm doing it. I have... trust issues with
-		// myself and iter::repeat. i hope you understand
-		for _ in 0..exected_padding_bytes {
-			expected.push(0x00);
-		}
+		expected.resize(expected.len() + expected_padding_bytes, 0x00);
 
 		let bytes = palette.as_bytes();
 		assert_eq!(expected, bytes.as_slice())
@@ -201,7 +195,7 @@ mod test {
 
 	fn test_n_with_padding_range(real_count_low: u8, real_count_high: u8, next_padstop: usize) {
 		for x in real_count_low..=real_count_high {
-			test_n_with_padding(x as usize, (next_padstop as usize - x as usize) * 3)
+			test_n_with_padding(x as usize, (next_padstop - x as usize) * 3)
 		}
 	}
 
