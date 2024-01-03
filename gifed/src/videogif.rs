@@ -1,15 +1,23 @@
-use crate::{block::Palette, writer::ImageBuilder, Color, EncodeError, Gif};
+use crate::{
+	block::{LoopCount, Palette},
+	writer::ImageBuilder,
+	Color, EncodeError, Gif,
+};
 
 use color_quant::NeuQuant;
 use rgb::{ComponentBytes, FromSlice};
 
 use std::convert::TryFrom;
 
+/// A Video-like GIF.
+///
+/// All images must have the same dimensions.
 pub struct VideoGif {
 	width: u16,
 	height: u16,
 	framerate: Option<u16>,
 	frames: Vec<Frame>,
+	looping: LoopCount,
 }
 
 impl VideoGif {
@@ -19,6 +27,7 @@ impl VideoGif {
 			height,
 			framerate: None,
 			frames: vec![],
+			looping: LoopCount::Forever,
 		}
 	}
 
@@ -28,6 +37,13 @@ impl VideoGif {
 	/// of a second, so you might not get exactly what you want.
 	pub fn set_framerate(&mut self, framerate: u16) {
 		self.framerate = Some(100 / framerate);
+	}
+
+	/// Set the number of times this gif should loop. Defaults to forever.
+	///
+	/// See [LoopCount]
+	pub fn set_looping(&mut self, count: LoopCount) {
+		self.looping = count;
 	}
 
 	/// Adds a frame to the gif.
@@ -53,9 +69,11 @@ impl VideoGif {
 
 	#[rustfmt::skip] // it was doing things i did not like
 	pub fn build(self) -> Result<Gif, EncodeError> {
-		let Self { width, height, framerate, frames } = self;
+		let Self { width, height, framerate, frames, looping } = self;
 
 		let mut gif = Gif::new(width, height);
+
+		gif.push(looping);
 
 		for Frame { image_indices, interval, palette } in frames {
 			//TODO: return error instead of defaulting to 10? or print warning?
