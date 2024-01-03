@@ -82,6 +82,12 @@ pub struct Frame {
 	palette: Palette,
 }
 
+impl From<Vec<Color>> for Frame {
+	fn from(flat: Vec<Color>) -> Self {
+		flat.as_slice().into()
+	}
+}
+
 impl From<&[Color]> for Frame {
 	fn from(flat: &[Color]) -> Self {
 		let flat_rgba = flat.as_rgba();
