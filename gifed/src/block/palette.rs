@@ -51,9 +51,8 @@ impl Palette {
 	pub fn from_color(&self, color: Color) -> Option<u8> {
 		self.table
 			.iter()
-			.enumerate()
-			.find(|(_, c)| **c == color)
-			.map(|(i, _)| i as u8)
+			.position(|c| *c == color)
+			.map(|idx| idx as u8)
 	}
 
 	/// How many padding bytes we need to write.

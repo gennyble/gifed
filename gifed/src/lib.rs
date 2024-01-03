@@ -2,9 +2,9 @@ mod gif;
 mod lzw;
 
 pub mod block;
-#[cfg(feature = "videoish")]
-pub mod gif_builder;
 pub mod reader;
+#[cfg(feature = "videoish")]
+pub mod videogif;
 pub mod writer;
 
 pub use reader::DecodeError;

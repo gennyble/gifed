@@ -30,8 +30,25 @@ impl VideoGif {
 		self.framerate = Some(100 / framerate);
 	}
 
+	/// Adds a frame to the gif.
+	///
+	/// # Panic
+	/// Panics if the provided [Frame]'s length is not the same as the gif's
+	/// width * height.
 	pub fn add_frame<F: Into<Frame>>(&mut self, frame: F) {
-		self.frames.push(frame.into())
+		let frame = frame.into();
+		let frame_area = frame.image_indices.len();
+		let gif_area = self.width as usize * self.height as usize;
+
+		if frame_area != gif_area {
+			//TODO: gen- Result instead of panic?
+			panic!(
+				"frame has a length of {frame_area} but VideoGif expected {gif_area} ({} * {})",
+				self.width, self.height
+			);
+		}
+
+		self.frames.push(frame)
 	}
 
 	#[rustfmt::skip] // it was doing things i did not like
@@ -58,9 +75,9 @@ impl VideoGif {
 }
 
 pub struct Frame {
-	///indices into the palette
+	/// indices into the palette
 	image_indices: Vec<u8>,
-	///in hundredths of a second
+	/// in hundredths of a second
 	interval: Option<u16>,
 	palette: Palette,
 }
@@ -70,16 +87,16 @@ impl From<&[Color]> for Frame {
 		let flat_rgba = flat.as_rgba();
 		let quant = NeuQuant::new(1, 256, flat_rgba.as_bytes());
 
-		let mut indicies = vec![0; flat.len()];
+		let mut indices = vec![0; flat.len()];
 		for (image_idx, px) in flat.iter().enumerate() {
 			let color_idx = quant.index_of(&[px.r, px.g, px.b, 255]);
-			indicies[image_idx] = color_idx as u8;
+			indices[image_idx] = color_idx as u8;
 		}
 
 		let palette = Palette::try_from(quant.color_map_rgb().as_slice()).unwrap();
 
 		Self {
-			image_indices: indicies,
+			image_indices: indices,
 			interval: None,
 			palette,
 		}
