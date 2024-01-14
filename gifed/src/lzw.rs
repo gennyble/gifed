@@ -36,8 +36,6 @@ impl<'a> LZW<'a> {
 		let clear_code = 1u16 << minimum_size;
 		let end_of_information_code = clear_code + 1;
 
-		dbg!(minimum_size, clear_code);
-
 		// Fill dictionary with self-descriptive values
 		for value in 0..clear_code {
 			dictionary.insert(&DEFAULT_DICT[value as usize..value as usize + 1], value);
