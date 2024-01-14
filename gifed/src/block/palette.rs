@@ -20,7 +20,7 @@ impl Palette {
 	}
 
 	pub fn lzw_code_size(&self) -> u8 {
-		let table_log = (self.table.len() as f32).log2() as u8;
+		let table_log = (self.table.len() as f32).log2().ceil() as u8;
 		table_log.max(2)
 	}
 
