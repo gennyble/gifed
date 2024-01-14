@@ -50,6 +50,11 @@ impl Gif {
 		self.descriptor.background_color_index = idx;
 	}
 
+	pub fn set_palette(&mut self, palette: Option<Palette>) {
+		self.descriptor.set_color_table_metadata(palette.as_ref());
+		self.palette = palette;
+	}
+
 	pub fn background_color(&self) -> Option<u8> {
 		// vii) Background Color Index - Index into the Global Color Table for
 		// the Background Color. The Background Color is the color used for
