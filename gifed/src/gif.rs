@@ -6,7 +6,8 @@ use crate::{
 		extension::{DisposalMethod, GraphicControl},
 		Block, CompressedImage, IndexedImage, Palette, ScreenDescriptor, Version,
 	},
-	writer::EncodeBlock,
+	writer::{EncodeBlock, ImageBuilder},
+	Color, EncodeError,
 };
 
 #[derive(Clone, Debug)]
@@ -28,6 +29,42 @@ impl Gif {
 			palette: None,
 			blocks: vec![],
 		}
+	}
+
+	/// Create a new GIF with a single frame.
+	///
+	/// `data` should be a buffer of RGB data with a length of width * height * 3.
+	///
+	/// ## Errors
+	/// [EncodeError::TooManyColors] if the number of unique colors in the RGB
+	/// image are greater than 256.
+	pub fn from_rgb(width: u16, height: u16, mut data: Vec<u8>) -> Result<Self, EncodeError> {
+		let mut pal = Palette::new();
+		for idx in 0..data.len() / 3 {
+			let raw = &data[idx * 3..idx * 3 + 3];
+			let clr = Color::new(raw[0], raw[1], raw[2]);
+
+			match pal.from_color(clr) {
+				Some(clr_idx) => data[idx] = clr_idx,
+				None => {
+					if pal.len() == 256 {
+						// Error if we're already at max size
+						return Err(EncodeError::TooManyColors);
+					} else {
+						// Set as the next index, then fill that index in the palette
+						data[idx] = pal.len() as u8;
+						pal.push(clr);
+					}
+				}
+			}
+		}
+		data.resize(width as usize * height as usize, 0);
+
+		let mut gif = Gif::new(width, height);
+		let img = ImageBuilder::new(width, height).palette(pal).build(data)?;
+		gif.push(img);
+
+		Ok(gif)
 	}
 
 	pub fn set_width(&mut self, width: u16) {
@@ -246,7 +283,7 @@ impl<'a> Image<'a> {
 	}
 
 	/// Clones the CompressedImage and decompresses it.
-	pub fn decompess(&self) -> IndexedImage {
+	pub fn decompress(&self) -> IndexedImage {
 		//FIXME: remove unwrap
 		self.compressed.clone().decompress().unwrap()
 	}
