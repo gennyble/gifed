@@ -219,6 +219,77 @@ impl BitStream {
 	}
 }
 
+const MASKS: &[u8] = &[
+	0b0000_0001,
+	0b0000_0011,
+	0b0000_0111,
+	0b0000_1111,
+	0b0001_1111,
+	0b0011_1111,
+	0b0111_1111,
+	0b1111_1111,
+];
+
+struct BitPopper<'d> {
+	data: &'d [u8],
+	idx: u8,
+}
+
+impl<'d> BitPopper<'d> {
+	pub fn new(data: &'d [u8]) -> Self {
+		Self { data, idx: 0 }
+	}
+
+	pub fn pop_bits(&mut self, mut bit_count: u8) -> u16 {
+		let mut ret = 0u16;
+
+		let mut bits_read = 0;
+		while bit_count > 0 {
+			let bits = self.take_from_byte(bit_count);
+
+			ret >>= bits.bit_length;
+			ret |= (bits.bits as u16) << (16 - bits.bit_length);
+
+			bit_count -= bits.bit_length;
+			bits_read += bits.bit_length;
+		}
+
+		ret >> (16 - bits_read)
+	}
+
+	/// Take as many bits we can from the current byte. This may not take all
+	/// of the requested bits if, for example, the current first byte does not
+	/// have enough. In that case [BitsFromByte] will have how many bits were
+	/// returned as well as the bits themself.
+	///
+	/// This function advances the internal data buffer if we've reached the end
+	/// of the current byte
+	fn take_from_byte(&mut self, bit_count: u8) -> BitsFromByte {
+		let bits_left = 8 - self.idx;
+		let bits_can_has = bits_left.min(bit_count);
+
+		let shifted = self.data[0] >> self.idx;
+		let result = shifted & MASKS[bits_can_has as usize];
+
+		self.idx += bits_can_has;
+		if self.idx >= 8 {
+			self.idx = 0;
+			self.data = &self.data[1..];
+		}
+
+		BitsFromByte {
+			bits: result,
+			bit_length: bits_can_has,
+		}
+	}
+}
+
+#[derive(Debug, PartialEq)]
+struct BitsFromByte {
+	bits: u8,
+	bit_length: u8,
+}
+
 #[cfg(test)]
 mod bitstream_test {
 	use super::*;
@@ -255,5 +326,49 @@ mod bitstream_test {
 		println!();
 
 		assert_eq!(bsvec, vec![0b0000_0011, 0b0001_0000]);
+	}
+
+	#[test]
+	fn bitpopper_take_from_byte_3() {
+		let mut bs = BitPopper::new(&[0x84, 0x1D]);
+
+		assert_eq!(
+			bs.take_from_byte(3),
+			BitsFromByte {
+				bits: 0b100,
+				bit_length: 3
+			}
+		);
+
+		assert_eq!(
+			bs.take_from_byte(3),
+			BitsFromByte {
+				bits: 0b000,
+				bit_length: 3
+			}
+		);
+
+		// Moment of truth, this starts taking from the second byte
+		assert_eq!(
+			bs.take_from_byte(3),
+			BitsFromByte {
+				bits: 0b10,
+				bit_length: 2
+			}
+		);
+	}
+
+	#[test]
+	fn bitpopper_pop_bits() {
+		let mut bs = BitPopper::new(&[0x84, 0x1D]);
+
+		assert_eq!(bs.pop_bits(3), 0b100);
+		assert_eq!(bs.pop_bits(3), 0b000);
+
+		// Moment of truth, this starts taking from the second byte
+		assert_eq!(bs.pop_bits(3), 0b110);
+
+		assert_eq!(bs.pop_bits(3), 0b110);
+		assert_eq!(bs.pop_bits(4), 0b0001);
 	}
 }
